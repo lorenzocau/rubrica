@@ -1,19 +1,22 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-import { Version } from '@microsoft/sp-core-library';
+
+// per le chiamate a Microsoft Graph
+import { MSGraphClientV3 } from '@microsoft/sp-http';
+import * as MicrosoftGraph from '@microsoft/microsoft-graph-types';
+
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'RubricaWebPartStrings';
 import Rubrica from './components/Rubrica';
 import { IRubricaProps } from './components/IRubricaProps';
 
 export interface IRubricaWebPartProps {
-  description: string;
+
 }
 
 export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPartProps> {
@@ -23,9 +26,7 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
   public render(): void {
     const element: React.ReactElement<IRubricaProps> = React.createElement(
       Rubrica,
-      {
-        description: this.properties.description,
-      }
+      // {}
     );
 
     ReactDom.render(element, this.domElement);
@@ -33,10 +34,6 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
 
   protected onDispose(): void {
     ReactDom.unmountComponentAtNode(this.domElement);
-  }
-
-  protected get dataVersion(): Version {
-    return Version.parse('1.0');
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
