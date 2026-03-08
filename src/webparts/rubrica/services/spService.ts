@@ -1,16 +1,10 @@
 import { getSP } from "../pnpjsConfig";
 import { IVociLista } from "../types";
 
-// Nome della lista e delle colonne SharePoint.
-// Centralizzati qui per evitare "magic strings" sparse nel codice —
-// se un giorno cambia il nome basta modificarlo in un posto solo.
 const LIST_NAME = "Rubrica";
-const COL_MAIL = "Mail";
-const COL_NUMERO_INTERNO = "NumeroInterno";
+const COL_CONTATTO = "Contatto";
+const COL_INTERNO = "Interno";
 
-// Legge tutti gli item della lista e li restituisce come IVociLista[].
-// Se la lista non esiste o la chiamata fallisce, restituisce un array vuoto
-// — la rubrica mostrerà comunque tutti gli utenti Graph senza numeri interni.
 export async function getVociLista(): Promise<IVociLista[]> {
     const sp = getSP();
 
@@ -18,14 +12,22 @@ export async function getVociLista(): Promise<IVociLista[]> {
         const items = await sp.web.lists
             .getByTitle(LIST_NAME)
             .items
-            .select(COL_MAIL, COL_NUMERO_INTERNO)();
+            .select(COL_CONTATTO, COL_INTERNO)();
 
-        return items.map((item) => ({
-            contatto: item[COL_MAIL],
-            interno: item[COL_NUMERO_INTERNO],
-        }));
+        const voci: IVociLista[] = [];
+
+        for (const item of items) {
+            const voce: IVociLista = {
+                contatto: item[COL_CONTATTO],
+                interno: item[COL_INTERNO],
+            };
+            voci.push(voce);
+        }
+        
+        return voci;
+
     } catch (e) {
-        console.warn(`Lista "${LIST_NAME}" non trovata o non accessibile. I numeri interni non saranno disponibili.`, e);
+        console.warn(`Lista "${LIST_NAME}" non trovata o non accessibile.`, e);
         return [];
     }
-};
+}
