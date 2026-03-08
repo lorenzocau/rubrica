@@ -1,34 +1,64 @@
-@import '~@fluentui/react/dist/sass/References.scss';
-
 .rubrica {
-  overflow: hidden;
-  padding: 1em;
-  color: "[theme:bodyText, default: #323130]";
-  color: var(--bodyText);
-  &.teams {
-    font-family: $ms-font-family-fallbacks;
+  padding: 16px;
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  .cerca {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+  
+    &:focus {
+      outline: none;
+      border-color: #0078d4;
   }
 }
 
-.welcome {
-  text-align: center;
+.griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-.welcomeImage {
-  width: 100%;
-  max-width: 420px;
+.card {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.links {
-  a {
-    text-decoration: none;
-    color: "[theme:link, default:#03787c]";
-    color: var(--link); // note: CSS Custom Properties support is limited to modern browsers only
+.nome {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #323130;
+}
 
-    &:hover {
-      text-decoration: underline;
-      color: "[theme:linkHovered, default: #014446]";
-      color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
-    }
-  }
+.titolo {
+  font-size: 12px;
+  color: #605e5c;
+  margin-bottom: 2px;
+}
+
+.reparto {
+  font-size: 12px;
+  color: #605e5c;
+  margin-bottom: 2px;
+}
+.mail {
+  font-size: 12px;
+  color: #0078d4;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.numero {
+  font-size: 13px;
+  font-weight: 600;
+  color: #323130;
+  margin-top: 6px;
 }

@@ -4,11 +4,7 @@
       "webApiPermissionRequests": [
         {
           "resource": "Microsoft Graph",
-          "scope": "User.Read"
-        },
-        {
-          "resource": "Microsoft Graph",
-          "scope": "People.Read"
+          "scope": "User.Read.All"
         }
       ],
     "name": "rubrica-client-side-solution",
