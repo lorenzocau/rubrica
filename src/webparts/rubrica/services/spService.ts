@@ -1,9 +1,9 @@
 import { getSP } from "../pnpjsConfig";
 import { IVociLista } from "../types";
 
-const LIST_NAME = "Rubrica";
-const COL_CONTATTO = "Contatto";
-const COL_INTERNO = "Interno";
+const LIST_NAME = "Rubrica";// NON CAMBIARE DOPO LA CREAZION
+const COL_CONTATTO = "Contatto";// NON CAMBIARE DOPO LA CREAZION
+const COL_INTERNO = "NumeroInterno"; // NON CAMBIARE DOPO LA CREAZIONE
 
 export async function getVociLista(): Promise<IVociLista[]> {
     const sp = getSP();
