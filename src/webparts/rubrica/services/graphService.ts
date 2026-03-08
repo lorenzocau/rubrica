@@ -14,5 +14,6 @@ export const getGraphUsers = async (): Promise<User[]> => {
             "mobilePhone",
             "businessPhones"
         )
+        .filter("accountEnabled eq true")
         .top(999)();
 }
