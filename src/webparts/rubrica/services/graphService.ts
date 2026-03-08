@@ -1,7 +1,7 @@
 import { getGraph } from "../pnpjsConfig";
 import { User } from "@microsoft/microsoft-graph-types";
 
-export const getGraphUsers = async (): Promise<User[]> => {
+export async function getGraphUsers() : Promise<User[]> {
     const graph = getGraph();
 
     return await graph.users

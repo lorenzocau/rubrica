@@ -11,7 +11,7 @@ const COL_NUMERO_INTERNO = "NumeroInterno";
 // Legge tutti gli item della lista e li restituisce come IVociLista[].
 // Se la lista non esiste o la chiamata fallisce, restituisce un array vuoto
 // — la rubrica mostrerà comunque tutti gli utenti Graph senza numeri interni.
-export const getVociLista = async (): Promise<IVociLista[]> => {
+export async function getVociLista(): Promise<IVociLista[]> {
     const sp = getSP();
 
     try {
@@ -21,8 +21,8 @@ export const getVociLista = async (): Promise<IVociLista[]> => {
             .select(COL_MAIL, COL_NUMERO_INTERNO)();
 
         return items.map((item) => ({
-            mail: item[COL_MAIL],
-            numeroInterno: item[COL_NUMERO_INTERNO],
+            contatto: item[COL_MAIL],
+            interno: item[COL_NUMERO_INTERNO],
         }));
     } catch (e) {
         console.warn(`Lista "${LIST_NAME}" non trovata o non accessibile. I numeri interni non saranno disponibili.`, e);
