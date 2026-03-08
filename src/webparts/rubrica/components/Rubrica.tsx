@@ -39,7 +39,6 @@ function Rubrica() {
       //carichiamo risultati con merge se abbiamo ricevuto
       const merged = merge(datiUser, datiLista);
       setRubrica(merged);
-      setFiltrati(merged);
     }
     catch (e) {
       setError(true);
@@ -134,7 +133,7 @@ function merge(datiUser: User[], datiLista: IVociLista[]): IRubricaEntry[] {
 }
 
 function filtra(input: string, risultati: IRubricaEntry[]): IRubricaEntry[] {
-  if (input.trim() == "") return risultati; // se non ha scritto niente..
+  if (input.trim() == "") return []; // no input -> no risultati
 
   const q = input.toLowerCase();
   const filtrati: IRubricaEntry[] = [];
