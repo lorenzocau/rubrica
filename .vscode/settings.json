@@ -34,7 +34,9 @@
     "**/bower_components": true,
     "**/coverage": true,
     "lib-commonjs": true,
-    "gcm-diagnose.log": true
+    "gcm-diagnose.log": true,
+    "src/webparts/rubrica/RubricaWebPart.manifest.json": true,
+    "src\\webparts\\rubrica\\components\\Rubrica.module.scss": true
   },
   "hide-files.files": []
 }

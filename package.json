@@ -20,6 +20,9 @@
     "@microsoft/sp-office-ui-fabric-core": "1.22.2",
     "@microsoft/sp-property-pane": "1.22.2",
     "@microsoft/sp-webpart-base": "1.22.2",
+    "@pnp/graph": "^4.18.0",
+    "@pnp/logging": "^4.18.0",
+    "@pnp/sp": "^4.18.0",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "tslib": "2.3.1"

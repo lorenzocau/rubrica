@@ -1,34 +1,16 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-
-// per le chiamate a Microsoft Graph
-import { MSGraphClientV3 } from '@microsoft/sp-http';
-import * as MicrosoftGraph from '@microsoft/microsoft-graph-types';
-
-import {
-  type IPropertyPaneConfiguration,
-  PropertyPaneTextField
-} from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-
-import * as strings from 'RubricaWebPartStrings';
+import { IPropertyPaneConfiguration } from '@microsoft/sp-property-pane';
 import Rubrica from './components/Rubrica';
-import { IRubricaProps } from './components/IRubricaProps';
+import { Sharepoint } from '@microsoft/microsoft-graph-types';
 
-export interface IRubricaWebPartProps {
-
-}
-
-export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPartProps> {
-
-
+export default class RubricaWebPart extends BaseClientSideWebPart<{}> {
 
   public render(): void {
     const element: React.ReactElement<IRubricaProps> = React.createElement(
       Rubrica,
-      // {}
     );
-
     ReactDom.render(element, this.domElement);
   }
 
@@ -37,24 +19,6 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    return {
-      pages: [
-        {
-          header: {
-            description: strings.PropertyPaneDescription
-          },
-          groups: [
-            {
-              groupName: strings.BasicGroupName,
-              groupFields: [
-                PropertyPaneTextField('description', {
-                  label: strings.DescriptionFieldLabel
-                })
-              ]
-            }
-          ]
-        }
-      ]
-    };
+    return { pages: [] };
   }
 }
