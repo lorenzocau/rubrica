@@ -61,7 +61,7 @@ function Rubrica() {
         onChange={(event, text) => setInput(text ?? "")}
         onClear={() => setInput("")}
       />
-      {filtrati.map((entry, i) => (
+      {filtrati.slice(0, 30).map((entry, i) => (
         <PersonCard key={i} entry={entry} />
       ))}
     </>
@@ -108,13 +108,15 @@ function filtra(input: string, risultati: IRubricaEntry[]): IRubricaEntry[] {
       if (entry.user.displayName?.toLowerCase().includes(q) ||
         entry.user.mail?.toLowerCase().includes(q) ||
         entry.user.department?.toLowerCase().includes(q) ||
-        entry.interno?.toLowerCase().includes(q))
+        entry.interno?.toLowerCase().includes(q) ||
+        entry.user.jobTitle?.toLowerCase().includes(q))
 
         filtrati.push(entry);
     }
     else {
       if (entry.nome.toLowerCase().includes(q) ||
-        entry.interno.toLowerCase().includes(q))
+        entry.interno.toLowerCase().includes(q) ||
+        "servizio".includes(q))
 
         filtrati.push(entry);
     }

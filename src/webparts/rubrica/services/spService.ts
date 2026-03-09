@@ -12,7 +12,8 @@ export async function getVociLista(): Promise<IVociLista[]> {
         const items = await sp.web.lists
             .getByTitle(LIST_NAME)
             .items
-            .select(COL_CONTATTO, COL_INTERNO)();
+            .select(COL_CONTATTO, COL_INTERNO)
+            .top(999)();
 
         const voci: IVociLista[] = [];
 
