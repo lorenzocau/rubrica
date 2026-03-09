@@ -33,10 +33,9 @@ function PersonCard({ entry }: IPersonCardProps) {
             <div className={cardStyle}>
                 <Persona
                     text={entry.user.displayName ?? "—"}
-                    secondaryText={entry.user.jobTitle ?? undefined}
-                    tertiaryText={entry.user.department ?? undefined} // size56 o inferiore
-                    optionalText={entry.user.mail ?? undefined}
-                    size={PersonaSize.size48}
+                    secondaryText={`${entry.user.department} - ${entry.user.jobTitle}`}
+                    tertiaryText={entry.user.mail ?? undefined} // size56 o inferiore
+                    size={PersonaSize.size40}
                     presence={PersonaPresence.online}
 
                 />
@@ -57,7 +56,7 @@ function PersonCard({ entry }: IPersonCardProps) {
                 secondaryText="Servizio"
                 tertiaryText="Miao miao"
                 size={PersonaSize.size48}
-                
+
             />
             <div className={numeroStyle}>
                 {`int. ${entry.interno}`}
