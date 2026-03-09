@@ -3,8 +3,13 @@ import { useState, useEffect } from "react";
 import { User } from "@microsoft/microsoft-graph-types";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 
-import { getGraphUsers } from "../services/graphService";
-import { getVociLista } from "../services/spService";
+// 
+import { getMockGraphUsers as getGraphUsers } from "../mockdata";
+import { getMockVociLista as getVociLista } from "../mockdata";
+
+// usiamo dati generati ormai
+// import { getGraphUsers } from "../services/graphService";
+// import { getVociLista } from "../services/spService";
 import { IVociLista, IRubricaEntry } from "../types";
 import PersonCard from "./PersonCard";
 
