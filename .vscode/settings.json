@@ -33,7 +33,7 @@
     "**/bower_components": true,
     "**/coverage": true,
     "lib-commonjs": true,
-    "gcm-diagnose.log": true,
+    "gcm-diagnose.log": true
   },
   "hide-files.files": []
 }
