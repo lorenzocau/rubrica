@@ -3,11 +3,10 @@ import { useState, useEffect } from "react";
 import { User } from "@microsoft/microsoft-graph-types";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 
-// 
+// dati mockup
 import { getMockGraphUsers as getGraphUsers } from "../mockdata";
 import { getMockVociLista as getVociLista } from "../mockdata";
-
-// usiamo dati generati ormai
+// dati reali
 // import { getGraphUsers } from "../services/graphService";
 // import { getVociLista } from "../services/spService";
 import { IVociLista, IRubricaEntry } from "../types";
@@ -20,20 +19,17 @@ function Rubrica() {
   const [input, setInput] = useState<string>("");
   const [filtrati, setFiltrati] = useState<IRubricaEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<boolean>(false);
+  const [warning, setWarning] = useState<string>("");
 
   async function caricaDati() {
     try {
-      const [datiUser, datiLista] = await Promise.all(
-        [getGraphUsers(), getVociLista()]
-      );
-      const merged = merge(datiUser, datiLista);
+      const [datiGraph, datiLista] = await Promise.all([getGraphUsers(), getVociLista()]);
+      if (datiGraph.length === 0) setWarning("Problema con Microsoft Graph");
+      if (datiLista.length === 0) setWarning("Problema con la lista Contatti");
+      const merged = merge(datiGraph, datiLista);
       setRubrica(merged);
-      // filtrati resta [] — nulla mostrato finché l'utente non cerca
     }
-    catch (e) {
-      setError(true);
-    }
+    // errori gestiti nei servizi
     finally {
       setLoading(false);
     }
@@ -51,10 +47,10 @@ function Rubrica() {
 
   // --- render ---
   if (loading) return <div>Caricamento...</div>;
-  if (error) return <div>Errore nel caricamento della rubrica.</div>;
 
   return (
     <>
+      {warning && <div className={warning}>{warning}</div>}
       <SearchBox
         placeholder="Cerca per nome, reparto, interno..."
         value={input}
@@ -70,7 +66,7 @@ function Rubrica() {
 
 export default Rubrica;
 
-function merge(datiUser: User[], datiLista: IVociLista[]): IRubricaEntry[] {
+function merge(datiGraph: User[], datiLista: IVociLista[]): IRubricaEntry[] {
   const rubrica: IRubricaEntry[] = [];
   const internimap = new Map();
 
@@ -78,7 +74,7 @@ function merge(datiUser: User[], datiLista: IVociLista[]): IRubricaEntry[] {
   for (const datoLista of datiLista)
     internimap.set(datoLista.contatto.toLowerCase(), datoLista.interno);
 
-  for (const user of datiUser) {
+  for (const user of datiGraph) {
     if (internimap.get(user.mail?.toLowerCase()) != undefined) {
       entry = { tipo: "utente", user: user, interno: internimap.get(user.mail?.toLowerCase()) };
       internimap.delete(user.mail?.toLowerCase());
