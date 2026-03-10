@@ -38,8 +38,8 @@ import { LogLevel, PnPLogging } from "@pnp/logging";
 // Questo è un pattern Singleton: l'istanza viene creata una sola volta
 // (in onInit del WebPart) e poi riutilizzata da tutti i service senza
 // dover ri-passare il context ogni volta.
-var _sp: SPFI | null = null;
-var _graph: GraphFI | null = null;
+let _sp: SPFI | null = null;
+let _graph: GraphFI | null = null;
 
 // getSP va chiamata UNA VOLTA con il context (da RubricaWebPart.ts → onInit).
 // Tutte le chiamate successive (dai service) la chiamano senza argomenti

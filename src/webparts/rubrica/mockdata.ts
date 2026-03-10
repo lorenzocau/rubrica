@@ -270,13 +270,13 @@ const _voci: IContattoInterno[] = generaVociLista(_utenti);
 
 /** Simula getGraphUsers() — aggiunge 300ms di latenza finta */
 export async function getMockGraphUsers(): Promise<User[]> {
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     return _utenti;
 }
 
 /** Simula getVociLista() — aggiunge 200ms di latenza finta */
 export async function getMockVociLista(): Promise<IContattoInterno[]> {
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     return _voci;
 }
 

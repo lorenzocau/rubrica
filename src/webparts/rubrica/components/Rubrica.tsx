@@ -37,7 +37,7 @@ function Rubrica() {
 
   // --- carica i dati al mount ---
   useEffect(() => {
-    caricaDati();
+    void caricaDati();
   }, []);
 
   // --- filtra in base alla ricerca ---
