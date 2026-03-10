@@ -18,10 +18,10 @@ const CFG = {
     DOMAIN: "coind.it",
 
     // Prefisso interni telefonici  →  "02" → interni tipo "02-2301"
-    PREFISSO_INTERNO: "00",
+    PREFISSO_INTERNO: "",
 
     // Range interni: da 2300 a 2599  (300 numeri disponibili)
-    INTERNO_BASE: 0,
+    INTERNO_BASE: 100,
     INTERNO_RANGE: 300,
 
     // Quanti utenti Graph generare
@@ -80,31 +80,30 @@ function interno(): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NOMI = [
-    "Alberico", "Brunella", "Celestino", "Dorotea", "Ermenegildo",
-    "Fioralba", "Goffredo", "Hildegarda", "Imerio", "Jole",
-    "Katiuscia", "Learco", "Medea", "Nereo", "Orsola",
-    "Pieralberto", "Quirino", "Rosmunda", "Saverio", "Teodolinda",
-    "Ubaldo", "Venanzio", "Walburga", "Xanto", "Ylenia",
-    "Zaccaria", "Adalgisa", "Beniamino", "Clotilde", "Dagoberto",
-    "Eleuteria", "Fulgenzio", "Gelsomina", "Hannibal", "Isidora",
-    "Ladislao", "Mansueto", "Natanaele", "Onofrio", "Perpetua",
-    "Reginaldo", "Sigismondo", "Tarcisio", "Ugolino", "Virgilio",
-    "Wanda", "Zenobio", "Arcibaldo", "Baldassarre", "Crispino",
+    "Marco", "Laura", "Giuseppe", "Francesca", "Antonio",
+    "Giulia", "Matteo", "Sara", "Andrea", "Chiara",
+    "Luca", "Valentina", "Roberto", "Alessia", "Stefano",
+    "Martina", "Davide", "Elena", "Simone", "Alice",
+    "Fabio", "Federica", "Giovanni", "Paola", "Riccardo",
+    "Silvia", "Nicola", "Monica", "Alessandro", "Serena",
+    "Paolo", "Cristina", "Enrico", "Angela", "Michele",
+    "Elisa", "Filippo", "Veronica", "Lorenzo", "Roberta",
+    "Giorgio", "Claudia", "Daniele", "Ilaria", "Francesco",
+    "Michela", "Emanuele", "Sabrina", "Massimo", "Giorgia",
 ];
 
 const COGNOMI = [
-    "Brassoletti", "Cazzutti", "Dinaccioli", "Florimondi", "Garbuglia",
-    "Herculani", "Intragnoli", "Lapuzza", "Morbiducci", "Norcenni",
-    "Orzatelli", "Pampanini", "Quaresimotti", "Ruffatazzo", "Sbrocchetti",
-    "Trivellacci", "Ubertazzi", "Volpacchiotti", "Wronkowski", "Zabaioni",
-    "Andrisani", "Bertaccini", "Capannacci", "Delbuono", "Ercolessi",
-    "Farfallini", "Guarnieri", "Innamorati", "Lionetti", "Maccagnani",
-    "Nasturzetti", "Odorisio", "Pantaleoni", "Raccuja", "Scalambrone",
-    "Tagliacozzo", "Ugoccioni", "Verdicchietti", "Zampetti", "Acciarino",
-    "Balducci", "Ciampiconi", "Durantini", "Espurini", "Fiordimonte",
-    "Giroldetti", "Iannaccone", "Lambertucci", "Mastrobuoni", "Negrisoli",
+    "Rossi", "Ferrari", "Russo", "Bianchi", "Romano",
+    "Colombo", "Ricci", "Marino", "Greco", "Bruno",
+    "Gallo", "Conti", "De Luca", "Mancini", "Costa",
+    "Giordano", "Rizzo", "Lombardi", "Moretti", "Barbieri",
+    "Fontana", "Santoro", "Marini", "Rinaldi", "Caruso",
+    "Ferretti", "Gatti", "Battaglia", "Pellegrini", "Palumbo",
+    "Sartori", "Fabbri", "Villa", "Coppola", "Martinelli",
+    "Serra", "Cattaneo", "Longo", "Gentile", "De Angelis",
+    "Benedetti", "Barone", "Montanari", "Ferraro", "Vitale",
+    "Neri", "Martini", "Sala", "Bernardi", "Testa",
 ];
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  🏢  REPARTI & RUOLI
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,31 +156,24 @@ const REPARTI: { dept: string; jobs: string[] }[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NOMI_SERVIZI = [
-    "Centralino", "Portineria", "Sala Riunioni A", "Sala Riunioni B", "Sala Riunioni C",
-    "Fax Amministrazione", "Fax Legale", "Stampante Piano 1", "Stampante Piano 2",
-    "Archivio Generale", "Archivio Storico", "Magazzino Centrale", "Magazzino Secondario",
-    "Infermeria", "Reception Nord", "Reception Sud", "Cancello Ingresso",
-    "Ufficio Acquisti", "Ufficio Spedizioni", "Ufficio Reclami",
-    "Helpdesk IT", "Server Room", "NOC",
-    "Bar Aziendale", "Mensa Aziendale", "Sala Relax",
-    "Autorimessa", "Guardiola Notte", "Servizio Pulizie",
-    "Ufficio Stampa", "Sala Conferenze Executive", "Sala Videoconferenze",
-    "Centro Formazione", "Biblioteca Tecnica", "Laboratorio Test",
-    "Ufficio Viaggi", "Gestione Fleet", "Ufficio Sinistri",
-    "Poliambulatorio Aziendale", "Ufficio Sicurezza", "RSPP",
-    "Centralino Emergenze", "Portiere Notturno", "Reparto Spedizioni Urgenti",
-    "Assistenza Clienti", "Servizio Post-Vendita", "Ufficio Resi",
-    "Ufficio Brevetti", "Ufficio Gare e Appalti", "Segreteria Direzione",
-    "Segreteria Commerciale", "Segreteria Tecnica", "Corrispondenza Interna",
-    "Reparto Produzione A", "Reparto Produzione B", "Controllo Qualità Linea",
+    "Centralino", "Portineria", "Reception",
+    "Magazzino Materie Prime", "Magazzino Prodotti Finiti", "Magazzino Imballaggi",
+    "Accettazione Merci", "Spedizioni", "Reparto Spedizioni Urgenti",
+    "Reparto Tostatura", "Reparto Macinazione", "Reparto Confezionamento",
+    "Reparto Porzionato", "Reparto Miscele", "Controllo Qualità Linea",
+    "Laboratorio Analisi Sensoriale", "Laboratorio Chimico", "Camera di Degustazione",
     "Manutenzione Impianti", "Officina Interna", "Magazzino Ricambi",
-    "Centralino Assistenza Tecnica", "Pronto Intervento Tecnico",
-    "Accettazione Merci", "Controllo Accessi", "Ufficio Export",
-    "Ufficio Import", "Ufficio Doganale", "Ufficio Assicurazioni",
-    "Back Office Commerciale", "Gestione Ordini", "Customer Success",
-    "Ufficio Sostenibilità", "Ufficio ESG", "Ufficio Privacy",
-    "DPO – Data Protection Officer", "Compliance", "Internal Audit",
-    "Investor Relations", "Ufficio Finanziamenti", "Tesoreria",
+    "Sala Caldaie", "Sala Compressori", "Impianto Trattamento Aria",
+    "Ufficio Acquisti Materie Prime", "Ufficio Import Verde", "Ufficio Doganale",
+    "Ufficio Export", "Gestione Ordini", "Back Office Commerciale",
+    "Assistenza Clienti", "Servizio Post-Vendita", "Ufficio Reclami",
+    "Helpdesk IT", "Server Room",
+    "Ufficio Sicurezza", "Infermeria",
+    "Mensa Aziendale", "Bar Aziendale",
+    "Archivio Generale", "Segreteria Direzione",
+    "Fax Amministrazione", "Stampante Piano 1", "Stampante Piano 2",
+    "Guardiola Notte", "Portiere Notturno", "Autorimessa",
+    "Centralino Emergenze", "Pronto Intervento Tecnico",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
