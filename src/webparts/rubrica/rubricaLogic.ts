@@ -2,26 +2,28 @@ import { User } from "@microsoft/microsoft-graph-types";
 import { IContattoInterno, IRubricaEntry } from "./types";
 
 
-export function merge(datiGraph: User[], datiLista: IContattoInterno[]): IRubricaEntry[] {
+export function merge(users: User[], vociLista: IContattoInterno[]): IRubricaEntry[] {
     const rubrica: IRubricaEntry[] = [];
-    const internimap = new Map();
+    const contattiMap = new Map();
 
     let entry: IRubricaEntry;
-    for (const datoLista of datiLista)
-        internimap.set(datoLista.contatto.toLowerCase(), datoLista.interno);
+    for (const voceLista of vociLista)
+        contattiMap.set(voceLista.contatto.toLowerCase(), voceLista.interno);
 
-    for (const user of datiGraph) {
-        if (internimap.get(user.mail?.toLowerCase()) != undefined) {
-            entry = { tipo: "utente", user: user, interno: internimap.get(user.mail?.toLowerCase()) };
-            internimap.delete(user.mail?.toLowerCase());
+    for (const user of users) {
+        const mail = user.mail?.toLowerCase();
+
+        if (contattiMap.get(mail) != undefined) {
+            entry = { tipo: "utente", user: user, interno: contattiMap.get(mail) };
+            contattiMap.delete(mail);
         }
-        else {
+        else 
             entry = { tipo: "utente", user: user, interno: null };
-        }
+        
         rubrica.push(entry);
     }
 
-    for (const [contatto, interno] of Array.from(internimap)) {
+    for (const [contatto, interno] of Array.from(contattiMap)) {
         entry = { tipo: "servizio", nome: contatto, interno: interno };
         rubrica.push(entry);
     }
