@@ -11,6 +11,7 @@ import { getMockVociLista as getVociLista } from "../mockdata";
 import { IContattoInterno, IRubricaEntry } from "../types";
 import PersonCard from "./PersonCard";
 import { filtra, merge } from "../rubricaLogic";
+import { MessageBar, MessageBarType } from "@fluentui/react";
 
 function Rubrica() {
 
@@ -24,8 +25,8 @@ function Rubrica() {
   async function caricaDati() {
     try {
       const [datiGraph, datiLista] = await Promise.all([getGraphUsers(), getVociLista()]);
-      if (datiGraph.length === 0) setWarning("Problema con Microsoft Graph");
-      if (datiLista.length === 0) setWarning("Problema con la lista Contatti");
+      if (datiGraph.length === 0) setWarning("Recupero utenti da Microsoft Graph non riuscito.");
+      if (datiLista.length === 0) setWarning("Recupero voci dalla lista Contatti non riuscito.");
       const merged = merge(datiGraph, datiLista);
       setRubrica(merged);
     }
@@ -50,7 +51,7 @@ function Rubrica() {
 
   return (
     <>
-      {warning && <div className={warning}>{warning}</div>}
+      {warning && <MessageBar messageBarType={MessageBarType.warning}>{warning}</MessageBar>}
       <SearchBox
         placeholder="Cerca per nome, reparto, interno..."
         value={ricerca}

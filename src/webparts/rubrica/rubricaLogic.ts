@@ -22,7 +22,7 @@ export function merge(users: User[], vociLista: IContattoInterno[]): IRubricaEnt
         
         rubrica.push(entry);
     }
-
+    // se graph non fa tutti vengono visti come servizio!
     for (const [contatto, interno] of Array.from(contattiMap)) {
         entry = { tipo: "servizio", nome: contatto, interno: interno };
         rubrica.push(entry);

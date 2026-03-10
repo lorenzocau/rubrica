@@ -19,8 +19,8 @@ const cardStyle = mergeStyles({
 
 const numeroStyle = mergeStyles({
     fontWeight: 600,
-    fontSize: 16,
-    color: "#aa1414",
+    fontSize: 12,
+    color: "#000000",
     minWidth: 80,
     textAlign: "right",
     flexShrink: 0
