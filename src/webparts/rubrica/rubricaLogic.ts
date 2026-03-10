@@ -1,8 +1,8 @@
 import { User } from "@microsoft/microsoft-graph-types";
-import { IVociLista, IRubricaEntry } from "./types";
+import { IContattoInterno, IRubricaEntry } from "./types";
 
 
-export function merge(datiGraph: User[], datiLista: IVociLista[]): IRubricaEntry[] {
+export function merge(datiGraph: User[], datiLista: IContattoInterno[]): IRubricaEntry[] {
     const rubrica: IRubricaEntry[] = [];
     const internimap = new Map();
 

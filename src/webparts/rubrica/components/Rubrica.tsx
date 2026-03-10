@@ -8,7 +8,7 @@ import { getMockVociLista as getVociLista } from "../mockdata";
 // dati reali
 // import { getGraphUsers } from "../services/graphService";
 // import { getVociLista } from "../services/spService";
-import { IVociLista, IRubricaEntry } from "../types";
+import { IContattoInterno, IRubricaEntry } from "../types";
 import PersonCard from "./PersonCard";
 import { filtra, merge } from "../rubricaLogic";
 

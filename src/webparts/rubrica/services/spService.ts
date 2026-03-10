@@ -1,11 +1,11 @@
 import { getSP } from "../pnpjsConfig";
-import { IVociLista } from "../types";
+import { IContattoInterno } from "../types";
 
 const LIST_NAME = "Rubrica";// NON CAMBIARE DOPO LA CREAZION
 const COL_CONTATTO = "Contatto";// NON CAMBIARE DOPO LA CREAZION
 const COL_INTERNO = "NumeroInterno"; // NON CAMBIARE DOPO LA CREAZIONE
 
-export async function getVociLista(): Promise<IVociLista[]> {
+export async function getVociLista(): Promise<IContattoInterno[]> {
     const sp = getSP();
 
     try {
@@ -15,10 +15,10 @@ export async function getVociLista(): Promise<IVociLista[]> {
             .select(COL_CONTATTO, COL_INTERNO)
             .top(999)();
 
-        const voci: IVociLista[] = [];
+        const voci: IContattoInterno[] = [];
 
         for (const item of items) {
-            const voce: IVociLista = {
+            const voce: IContattoInterno = {
                 contatto: item[COL_CONTATTO],
                 interno: item[COL_INTERNO],
             };

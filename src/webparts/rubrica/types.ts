@@ -3,22 +3,21 @@ import { User } from "@microsoft/microsoft-graph-types";
 
 
 //---Dati dalla lista SharePoint---
-export interface IVociLista {
+export interface IContattoInterno {
   contatto: string; // email | servizio
   interno: string;
 }
 
-// ---modello finale con discriminated union tramite tipo
-// per evitare tutti i possibili null in più
+
 export interface IRubricaUtente {
-  tipo: "utente";
+  tipo: "utente";   // discriminante
   user: User;
   interno: string | null;
 }
 
 export interface IRubricaServizio {
   tipo: "servizio";
-  nome: string;  // non più nullable
+  nome: string;     // discriminante
   interno: string;
 }
 

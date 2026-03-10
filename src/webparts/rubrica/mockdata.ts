@@ -42,7 +42,7 @@ const CFG = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { User } from "@microsoft/microsoft-graph-types";
-import { IVociLista } from "./types"; // ← percorso relativo standard
+import { IContattoInterno } from "./types"; // ← percorso relativo standard
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  🎲  PRNG deterministico (mulberry32) — stesso seed = stessi dati sempre
@@ -231,8 +231,8 @@ function generaUtenti(): User[] {
 }
 
 /** Genera le voci lista SharePoint */
-function generaVociLista(utenti: User[]): IVociLista[] {
-    const voci: IVociLista[] = [];
+function generaVociLista(utenti: User[]): IContattoInterno[] {
+    const voci: IContattoInterno[] = [];
     const interniUsati = new Set<string>();
 
     function nuovoInterno(): string {
@@ -266,7 +266,7 @@ function generaVociLista(utenti: User[]): IVociLista[] {
 
 // Generazione una-tantum (singleton, dati stabili per tutta la sessione)
 const _utenti: User[] = generaUtenti();
-const _voci: IVociLista[] = generaVociLista(_utenti);
+const _voci: IContattoInterno[] = generaVociLista(_utenti);
 
 /** Simula getGraphUsers() — aggiunge 300ms di latenza finta */
 export async function getMockGraphUsers(): Promise<User[]> {
@@ -275,7 +275,7 @@ export async function getMockGraphUsers(): Promise<User[]> {
 }
 
 /** Simula getVociLista() — aggiunge 200ms di latenza finta */
-export async function getMockVociLista(): Promise<IVociLista[]> {
+export async function getMockVociLista(): Promise<IContattoInterno[]> {
     await new Promise((r) => setTimeout(r, 200));
     return _voci;
 }
