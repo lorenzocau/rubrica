@@ -16,7 +16,7 @@ function Rubrica() {
 
   // --- stato ---
   const [rubrica, setRubrica] = useState<IRubricaEntry[]>([]);
-  const [input, setInput] = useState<string>("");
+  const [ricerca, setRicerca] = useState<string>("");
   const [filtrati, setFiltrati] = useState<IRubricaEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [warning, setWarning] = useState<string>("");
@@ -42,8 +42,8 @@ function Rubrica() {
 
   // --- filtra in base alla ricerca ---
   useEffect(() => {
-    setFiltrati(filtra(input, rubrica));
-  }, [input]);
+    setFiltrati(filtra(ricerca, rubrica));
+  }, [ricerca]);
 
   // --- render ---
   if (loading) return <div>Caricamento...</div>;
@@ -53,9 +53,9 @@ function Rubrica() {
       {warning && <div className={warning}>{warning}</div>}
       <SearchBox
         placeholder="Cerca per nome, reparto, interno..."
-        value={input}
-        onChange={(event, text) => setInput(text ?? "")}
-        onClear={() => setInput("")}
+        value={ricerca}
+        onChange={(event, text) => setRicerca(text ?? "")}
+        onClear={() => setRicerca("")}
       />
       {filtrati.slice(0, 30).map((entry, i) => (
         <PersonCard key={i} entry={entry} />
