@@ -20,13 +20,13 @@ function Rubrica() {
   const [ricerca, setRicerca] = useState<string>("");
   const [filtrati, setFiltrati] = useState<IRubricaEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [warning, setWarning] = useState<string>("");
+  const [avviso, setAvviso] = useState<string>("");
 
   async function caricaDati() {
     try {
       const [datiGraph, datiLista] = await Promise.all([getGraphUsers(), getVociLista()]);
-      if (datiGraph.length === 0) setWarning("Recupero utenti da Microsoft Graph non riuscito.");
-      if (datiLista.length === 0) setWarning("Recupero voci dalla lista Contatti non riuscito.");
+      if (datiGraph.length === 0) setAvviso("Recupero utenti da Microsoft Graph non riuscito.");
+      if (datiLista.length === 0) setAvviso("Recupero voci dalla lista Contatti non riuscito.");
       const merged = merge(datiGraph, datiLista);
       setRubrica(merged);
     }
@@ -51,7 +51,7 @@ function Rubrica() {
 
   return (
     <>
-      {warning && <MessageBar messageBarType={MessageBarType.warning}>{warning}</MessageBar>}
+      {avviso && <MessageBar messageBarType={MessageBarType.warning}>{avviso}</MessageBar>}
       <SearchBox
         placeholder="Cerca per nome, reparto, interno..."
         value={ricerca}
