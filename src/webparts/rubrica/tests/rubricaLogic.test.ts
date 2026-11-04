@@ -74,6 +74,73 @@ describe("merge", () => {
         expect(merge([], [])).toHaveLength(0);
     });
 
+    test("il nome del servizio mantiene le maiuscole originali", () => {
+        const result = merge([], [{ contatto: "Magazzino Materie Prime", interno: "200" }]);
+        const servizio = result[0];
+        expect(servizio.tipo).toBe("servizio");
+        if (servizio.tipo === "servizio") {
+            expect(servizio.nome).toBe("Magazzino Materie Prime");
+        }
+    });
+
+    test("spazi ai bordi di contatto e interno vengono ignorati", () => {
+        const result = merge([userConInterno], [{ contatto: "  Mario.Rossi@coind.it ", interno: " 101 " }]);
+        expect(result).toHaveLength(1); // nessun servizio orfano
+        expect(result[0].interno).toBe("101");
+    });
+
+    test("righe con contatto o interno vuoti vengono ignorate", () => {
+        const result = merge([], [
+            { contatto: "   ", interno: "1" },
+            { contatto: "Portineria", interno: " " },
+            { contatto: "", interno: "" },
+        ]);
+        expect(result).toHaveLength(0);
+    });
+
+    test("stesso contatto con più interni: vengono mostrati tutti", () => {
+        const result = merge([userConInterno], [
+            { contatto: "mario.rossi@coind.it", interno: "101" },
+            { contatto: "mario.rossi@coind.it", interno: "102" },
+        ]);
+        expect(result[0].interno).toBe("101 / 102");
+    });
+
+    test("stesso contatto con lo stesso interno ripetuto non viene duplicato", () => {
+        const result = merge([userConInterno], [
+            { contatto: "mario.rossi@coind.it", interno: "101" },
+            { contatto: "MARIO.ROSSI@coind.it", interno: "101" },
+        ]);
+        expect(result[0].interno).toBe("101");
+    });
+
+    test("servizio duplicato (maiuscole diverse) viene unito in una sola voce", () => {
+        const result = merge([], [
+            { contatto: "Reception", interno: "0" },
+            { contatto: "reception", interno: "1" },
+        ]);
+        expect(result).toHaveLength(1);
+        const servizio = result[0];
+        if (servizio.tipo === "servizio") {
+            expect(servizio.nome).toBe("Reception");
+            expect(servizio.interno).toBe("0 / 1");
+        }
+    });
+
+    test("voce con una mail senza utente in Graph diventa un servizio", () => {
+        const result = merge([], [{ contatto: "mario.rossi@coind.it", interno: "101" }]);
+        expect(result).toHaveLength(1);
+        expect(result[0].tipo).toBe("servizio");
+    });
+
+    test("due utenti con la stessa mail ricevono entrambi l'interno", () => {
+        const result = merge([userConInterno, { ...userConInterno, id: "altro" }], vociLista);
+        const utenti = result.filter(e => e.tipo === "utente");
+        expect(utenti).toHaveLength(2);
+        expect(utenti[0].interno).toBe("101");
+        expect(utenti[1].interno).toBe("101");
+    });
+
 });
 
 // ============================================================
@@ -110,6 +177,56 @@ describe("filtra", () => {
     test("servizio trovato per nome", () => {
         const result = filtra("reception", rubrica);
         expect(result.some(e => e.tipo === "servizio")).toBe(true);
+    });
+
+    test("la ricerca ignora gli accenti", () => {
+        expect(filtra("qualita", rubrica).some(e => e.tipo === "utente" && e.user.department === "Qualità")).toBe(true);
+        expect(filtra("QUALITÀ", rubrica).some(e => e.tipo === "utente" && e.user.department === "Qualità")).toBe(true);
+    });
+
+    test("più parole in ordine diverso trovano lo stesso utente", () => {
+        const result = filtra("rossi mario", rubrica);
+        expect(result).toHaveLength(1);
+        expect(result[0].tipo).toBe("utente");
+    });
+
+    test("le parole possono corrispondere a campi diversi", () => {
+        const result = filtra("mario qualità", rubrica);
+        expect(result).toHaveLength(1);
+    });
+
+    test("tutte le parole devono corrispondere", () => {
+        expect(filtra("mario amministrazione", rubrica)).toHaveLength(0);
+    });
+
+    test("una singola lettera non restituisce tutti i servizi", () => {
+        const servizi = merge([], [
+            { contatto: "Portineria", interno: "5" },
+            { contatto: "Magazzino", interno: "6" },
+        ]);
+        const result = filtra("e", servizi);
+        expect(result).toHaveLength(1); // solo "Portineria" contiene la e
+    });
+
+    test("la parola 'servizio' trova tutti i servizi", () => {
+        const servizi = merge([], [
+            { contatto: "Portineria", interno: "5" },
+            { contatto: "Magazzino", interno: "6" },
+        ]);
+        expect(filtra("servizio", servizi)).toHaveLength(2);
+        expect(filtra("servizio magazzino", servizi)).toHaveLength(1);
+    });
+
+    test("la parola 'servizio' non trova gli utenti", () => {
+        expect(filtra("servizio", merge([userConInterno], []))).toHaveLength(0);
+    });
+
+    test("ricerca su uno degli interni multipli", () => {
+        const multi = merge([userConInterno], [
+            { contatto: "mario.rossi@coind.it", interno: "101" },
+            { contatto: "mario.rossi@coind.it", interno: "102" },
+        ]);
+        expect(filtra("102", multi)).toHaveLength(1);
     });
 
 });
