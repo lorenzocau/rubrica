@@ -29,11 +29,16 @@ const numeroStyle = mergeStyles({
 function PersonCard({ entry }: IPersonCardProps) {
 
     if (entry.tipo === "utente") {
+        // reparto e ruolo: mostra solo quelli presenti (niente "null - null")
+        const secondaryText = [entry.user.department, entry.user.jobTitle]
+            .filter(v => !!v)
+            .join(" - ");
+
         return (
             <div className={cardStyle}>
                 <Persona
                     text={entry.user.displayName ?? "—"}
-                    secondaryText={`${entry.user.department} - ${entry.user.jobTitle}`}
+                    secondaryText={secondaryText || undefined}
                     tertiaryText={entry.user.mail ?? undefined} // size56 o inferiore
                     size={PersonaSize.size40}
                     presence={PersonaPresence.online}
@@ -54,7 +59,6 @@ function PersonCard({ entry }: IPersonCardProps) {
             <Persona
                 text={entry.nome}
                 secondaryText="Servizio"
-                tertiaryText="Miao miao"
                 size={PersonaSize.size48}
 
             />
