@@ -33,7 +33,20 @@
     "**/bower_components": true,
     "**/coverage": true,
     "lib-commonjs": true,
-    "gcm-diagnose.log": true
+    "gcm-diagnose.log": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.synctex.gz": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.pdf": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.log": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.fls": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.fdb_latexmk": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio.aux": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).synctex.gz": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).pdf": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).log": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).fls": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).fdb_latexmk": true,
+    "/C:/Users/Palmah/Desktop/tesi/tesi/frontespizio (1).aux": true,
+    "/C:/Users/Palmah/Documents/rubrica-demo/rubrica-demo": true
   },
   "hide-files.files": []
 }
