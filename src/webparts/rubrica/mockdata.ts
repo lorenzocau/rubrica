@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  🔧  CONFIGURAZIONE  — modifica qui, non toccare il resto
 // ─────────────────────────────────────────────────────────────────────────────
-
+export const LIST_NAME = "Rubrica";
 const CFG = {
     // Dominio email aziendale  →  mario.rossi@QUESTO.it
     DOMAIN: "coind.it",
