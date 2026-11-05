@@ -12,7 +12,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  🔧  CONFIGURAZIONE  — modifica qui, non toccare il resto
 // ─────────────────────────────────────────────────────────────────────────────
-export const LIST_NAME = "Rubrica";
 const CFG = {
     // Dominio email aziendale  →  mario.rossi@QUESTO.it
     DOMAIN: "coind.it",
@@ -29,6 +28,9 @@ const CFG = {
 
     // Quanti servizi/uffici aggiuntivi (senza account AD)
     NUM_SERVIZI: 80,
+
+    // Quanti contatti esterni generare (lista "Esterni")
+    NUM_ESTERNI: 25,
 
     // Percentuale di utenti che hanno un numero interno (0–1)
     COPERTURA_INTERNI_UTENTI: 0.80,
@@ -216,24 +218,28 @@ function generaUtenti(): User[] {
             mobilePhone: `+39 3${Math.floor(rand() * 9)}${("0000000" + Math.floor(rand() * 10000000)).slice(-7)}`,
             businessPhones: [],
             accountEnabled: true,
+            // ogni 13esimo utente è un ospite (nessun uso del PRNG: gli altri dati restano identici)
+            userType: (utenti.length + 1) % 13 === 0 ? "Guest" : "Member",
         } as User);
     }
 
     return utenti;
 }
 
+// Interni già assegnati (condivisi tra servizi ed esterni, così non si ripetono)
+const interniUsati = new Set<string>();
+
+function nuovoInterno(): string {
+    let i: string;
+    let loop = 0;
+    do { i = interno(); loop++; } while (interniUsati.has(i) && loop < 1000);
+    interniUsati.add(i);
+    return i;
+}
+
 /** Genera le voci lista SharePoint */
 function generaVociLista(utenti: User[]): IContattoInterno[] {
     const voci: IContattoInterno[] = [];
-    const interniUsati = new Set<string>();
-
-    function nuovoInterno(): string {
-        let i: string;
-        let loop = 0;
-        do { i = interno(); loop++; } while (interniUsati.has(i) && loop < 1000);
-        interniUsati.add(i);
-        return i;
-    }
 
     // Quanti utenti hanno un interno
     const numConInterno = Math.round(utenti.length * CFG.COPERTURA_INTERNI_UTENTI);
@@ -279,3 +285,43 @@ export async function getMockVociLista(): Promise<IContattoInterno[]> {
 // console.table(_utenti.slice(0, 10).map(u => ({ name: u.displayName, mail: u.mail, dept: u.department })));
 // console.table(_voci.slice(0, 10));
 // console.log(`Utenti: ${_utenti.length} | Voci lista: ${_voci.length}`);
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  🤝  ESTERNI (lista "Esterni") + account particolari per provare i filtri
+//  Generati DOPO tutto il resto: i dati sopra non cambiano rispetto a prima.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NOMI_ESTERNI = [
+    "Studio Commercialista Bianchi", "Consulente Sicurezza Verdi", "Idraulico Pronto Intervento",
+    "Elettricista Neri", "Tecnico Caldaie Fontana", "Assistenza Fotocopiatrici",
+    "Corriere Espresso", "Taxi Navile", "Studio Legale Marini",
+    "Medico Competente", "Società Pulizie", "Manutenzione Ascensori",
+    "Agenzia Interinale", "Consulente Paghe Esterno", "Fornitore Caffè Verde",
+    "Fornitore Imballaggi", "Trasportatore Nord", "Trasportatore Sud",
+    "Revisore dei Conti", "Consulente Privacy", "Fornitore Etichette",
+    "Assistenza Software Gestionale", "Assistenza Linea Confezionamento",
+    "Ditta Disinfestazione", "Centro Analisi Esterno",
+];
+
+/** Genera le voci della lista "Esterni" */
+function generaEsterni(): IContattoInterno[] {
+    return pickN(NOMI_ESTERNI, CFG.NUM_ESTERNI).map(nome => ({
+        contatto: nome,
+        interno: nuovoInterno(),
+    }));
+}
+
+const _esterni: IContattoInterno[] = generaEsterni();
+
+// Account senza mail (es. sale riunioni): servono a provare "Nascondi gli account senza mail".
+// Aggiunti dopo la generazione della lista, quindi non hanno interno.
+_utenti.push(
+    { id: "mock-uid-sala-1", displayName: "Sala Riunioni 1", department: "Direzione", userType: "Member", accountEnabled: true } as User,
+    { id: "mock-uid-sala-2", displayName: "Sala Riunioni 2", department: "Direzione", userType: "Member", accountEnabled: true } as User,
+);
+
+/** Simula getVociLista() sulla lista Esterni — aggiunge 250ms di latenza finta */
+export async function getMockEsterni(): Promise<IContattoInterno[]> {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    return _esterni;
+}
