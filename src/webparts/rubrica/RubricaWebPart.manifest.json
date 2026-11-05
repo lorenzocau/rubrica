@@ -18,11 +18,28 @@
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Advanced
     "group": { "default": "Advanced" },
-    "title": { "default": "rubrica" },
-    "description": { "default": "rubrica description" },
-    "officeFabricIconFontName": "Page",
+    "title": { "default": "Rubrica aziendale" },
+    "description": { "default": "Rubrica telefonica aziendale: utenti, servizi interni e contatti esterni" },
+    "officeFabricIconFontName": "ContactList",
+    // Valori di default per le NUOVE istanze: devono coincidere con src/webparts/rubrica/proprieta.ts
     "properties": {
-      "description": "rubrica"
+      "titolo": "",
+      "placeholderRicerca": "Cerca per nome, reparto, interno...",
+      "risultatiPerPagina": 30,
+      "mostraElencoCompleto": false,
+      "listaServizi": "Rubrica",
+      "listaEsterni": "Esterni",
+      "mostraEsterni": true,
+      "esterniInizialmenteVisibili": true,
+      "soloMembri": true,
+      "nascondiSenzaMail": true,
+      "mostraContatore": true,
+      "mostraPresenza": true,
+      "mostraMail": true,
+      "mostraReparto": true,
+      "mostraCellulare": true,
+      "linkCliccabili": true,
+      "usaDatiMock": false
     }
   }]
 }
