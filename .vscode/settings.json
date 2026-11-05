@@ -9,6 +9,7 @@
     "**/Flutter/ephemeral": true,
     "**/.symlinks": true,
     "**/.plugin_symlinks": true,
+    "**/.widget_preview": true,
     "**/.*: true": true,
     "**/node_modules": true,
     "**/.yo-rc.json": true,
