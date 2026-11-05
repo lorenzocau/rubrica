@@ -1,10 +1,13 @@
 import * as React from "react";
 import { Persona, PersonaPresence, PersonaSize } from "@fluentui/react/lib/Persona";
+import { Link } from "@fluentui/react/lib/Link";
+import { IconButton } from "@fluentui/react/lib/Button";
 import { mergeStyles } from "@fluentui/react/lib/Styling";
-import { IRubricaEntry } from "../types";
+import { IOpzioniCard, IRubricaEntry } from "../types";
 
 interface IPersonCardProps {
     entry: IRubricaEntry;
+    opzioni: IOpzioniCard;
 }
 
 // --- stili ---
@@ -17,35 +20,84 @@ const cardStyle = mergeStyles({
     ":hover": { backgroundColor: "#f3f2f1" }
 });
 
+const destraStyle = mergeStyles({
+    display: "flex",
+    alignItems: "center",
+    flexShrink: 0
+});
+
+const numeriStyle = mergeStyles({
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    minWidth: 80
+});
+
 const numeroStyle = mergeStyles({
     fontWeight: 600,
     fontSize: 12,
     color: "#000000",
-    minWidth: 80,
-    textAlign: "right",
-    flexShrink: 0
+    textAlign: "right"
 });
 
-function PersonCard({ entry }: IPersonCardProps) {
+const cellulareStyle = mergeStyles({
+    fontSize: 11,
+    color: "#605e5c",
+    marginTop: 2,
+    textAlign: "right"
+});
+
+function PersonCard({ entry, opzioni }: IPersonCardProps) {
 
     if (entry.tipo === "utente") {
+        const user = entry.user;
+
         // reparto e ruolo: mostra solo quelli presenti (niente "null - null")
-        const secondaryText = [entry.user.department, entry.user.jobTitle]
-            .filter(v => !!v)
-            .join(" - ");
+        const secondaryText = opzioni.mostraReparto
+            ? [user.department, user.jobTitle].filter(v => !!v).join(" - ")
+            : "";
+
+        const mail = user.mail ?? undefined;
+        const cellulare = opzioni.mostraCellulare ? (user.mobilePhone ?? undefined) : undefined;
+
+        const mailVisibile = opzioni.mostraMail && !!mail;
+        const mailCliccabile = mailVisibile && opzioni.linkCliccabili;
 
         return (
             <div className={cardStyle}>
                 <Persona
-                    text={entry.user.displayName ?? "—"}
+                    text={user.displayName ?? "—"}
                     secondaryText={secondaryText || undefined}
-                    tertiaryText={entry.user.mail ?? undefined} // size56 o inferiore
+                    tertiaryText={mailVisibile ? mail : undefined} // size56 o inferiore
+                    onRenderTertiaryText={mailCliccabile
+                        ? () => <Link href={`mailto:${mail}`}>{mail}</Link>
+                        : undefined}
                     size={PersonaSize.size40}
-                    presence={PersonaPresence.online}
-
+                    presence={opzioni.mostraPresenza ? PersonaPresence.online : PersonaPresence.none}
                 />
-                <div className={numeroStyle}>
-                    {entry.interno ? `int. ${entry.interno}` : "—"}
+                <div className={destraStyle}>
+                    <div className={numeriStyle}>
+                        <div className={numeroStyle}>
+                            {entry.interno ? `int. ${entry.interno}` : "—"}
+                        </div>
+                        {cellulare && (
+                            <div className={cellulareStyle}>
+                                {opzioni.linkCliccabili
+                                    ? <Link href={`tel:${cellulare.replace(/\s+/g, "")}`}>{cellulare}</Link>
+                                    : cellulare}
+                            </div>
+                        )}
+                    </div>
+                    {opzioni.linkCliccabili && mail && (
+                        <IconButton
+                            iconProps={{ iconName: "Chat" }}
+                            title="Apri una chat in Teams"
+                            ariaLabel={`Apri una chat in Teams con ${user.displayName ?? mail}`}
+                            href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(mail)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        />
+                    )}
                 </div>
             </div>
         );
@@ -53,17 +105,18 @@ function PersonCard({ entry }: IPersonCardProps) {
     // PersonaSize.size100 = fino a tertiary
     // PersonaSize.size72 = fino a secondary
 
-    // servizio: nessun account AD, solo nome e numero
+    // servizio / esterno: nessun account AD, solo nome e numero
     return (
         <div className={cardStyle}>
             <Persona
                 text={entry.nome}
-                secondaryText="Servizio"
+                secondaryText={entry.tipo === "esterno" ? "Esterno" : "Servizio"}
                 size={PersonaSize.size48}
-
             />
-            <div className={numeroStyle}>
-                {`int. ${entry.interno}`}
+            <div className={numeriStyle}>
+                <div className={numeroStyle}>
+                    {`int. ${entry.interno}`}
+                </div>
             </div>
         </div>
     );
