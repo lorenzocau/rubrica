@@ -1,5 +1,5 @@
 import {
-    merge, filtra, applicaVista, ordina,
+    merge, filtra, applicaVista, ordina, estraiNumeroBreve,
     normalizzaPageSize, risolviNomeLista, validaNomeLista,
     PAGE_SIZE_DEFAULT, PAGE_SIZE_MIN, PAGE_SIZE_MAX
 } from "../rubricaLogic";
@@ -11,20 +11,18 @@ import { IContattoInterno, IRubricaWebPartProps } from "../types";
 const userConInterno: User = {
     mail: "mario.rossi@coind.it",
     displayName: "Mario Rossi",
-    department: "Qualità",
-    jobTitle: "Responsabile",
+    officeLocation: "Qualità - Responsabile",
 };
 
 const userSenzaInterno: User = {
     mail: "anna.bianchi@coind.it",
     displayName: "Anna Bianchi",
-    department: "Amministrazione",
-    jobTitle: "Impiegata",
+    officeLocation: "Amministrazione - Impiegata",
 };
 
 const userSenzaMail: User = {
     displayName: "Utente Senza Mail",
-    department: "IT",
+    officeLocation: "IT",
 };
 
 const vociLista: IContattoInterno[] = [
@@ -165,9 +163,9 @@ describe("filtra", () => {
         expect(result[0].tipo).toBe("utente");
     });
 
-    test("match su department", () => {
+    test("match su officeLocation (reparto e ruolo insieme)", () => {
         const result = filtra("qualità", rubrica);
-        expect(result.some(e => e.tipo === "utente" && e.user.department === "Qualità")).toBe(true);
+        expect(result.some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
     });
 
     test("match su interno", () => {
@@ -185,8 +183,8 @@ describe("filtra", () => {
     });
 
     test("la ricerca ignora gli accenti", () => {
-        expect(filtra("qualita", rubrica).some(e => e.tipo === "utente" && e.user.department === "Qualità")).toBe(true);
-        expect(filtra("QUALITÀ", rubrica).some(e => e.tipo === "utente" && e.user.department === "Qualità")).toBe(true);
+        expect(filtra("qualita", rubrica).some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
+        expect(filtra("QUALITÀ", rubrica).some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
     });
 
     test("più parole in ordine diverso trovano lo stesso utente", () => {
@@ -503,5 +501,67 @@ describe("risolviProprieta", () => {
     test("non modifica l'oggetto dei default", () => {
         risolviProprieta({ risultatiPerPagina: 99 });
         expect(PROPRIETA_DEFAULT.risultatiPerPagina).toBe(30);
+    });
+});
+
+
+// ============================================================
+// numero breve (ultime 3 cifre del telefono in AD)
+// ============================================================
+describe("estraiNumeroBreve", () => {
+    test("prende le ultime 3 cifre", () => {
+        expect(estraiNumeroBreve("+39 051 6543123")).toBe("123");
+        expect(estraiNumeroBreve("0516543123")).toBe("123");
+    });
+
+    test("ignora spazi, trattini e altri separatori", () => {
+        expect(estraiNumeroBreve("051-654 31.23")).toBe("123");
+        expect(estraiNumeroBreve("(051) 654 3 123 ")).toBe("123");
+    });
+
+    test("mantiene gli zeri iniziali", () => {
+        expect(estraiNumeroBreve("+39 051 6543007")).toBe("007");
+    });
+
+    test("un numero di sole 3 cifre vale come numero breve", () => {
+        expect(estraiNumeroBreve("123")).toBe("123");
+    });
+
+    test("meno di 3 cifre, vuoto o assente: null", () => {
+        expect(estraiNumeroBreve("12")).toBeNull();
+        expect(estraiNumeroBreve("")).toBeNull();
+        expect(estraiNumeroBreve("   ")).toBeNull();
+        expect(estraiNumeroBreve("abc")).toBeNull();
+        expect(estraiNumeroBreve(undefined)).toBeNull();
+        expect(estraiNumeroBreve(null)).toBeNull();
+    });
+});
+
+describe("merge con numero breve", () => {
+    const conTelefono: User = { id: "t", displayName: "Luca Verdi", mail: "luca.verdi@coind.it", businessPhones: ["+39 051 6543456"] };
+
+    test("l'utente senza voce in lista usa il numero breve del telefono", () => {
+        const result = merge([conTelefono], []);
+        expect(result[0].interno).toBe("456");
+    });
+
+    test("una voce in lista con la sua mail sostituisce il numero breve", () => {
+        const result = merge([conTelefono], [{ contatto: "luca.verdi@coind.it", interno: "900" }]);
+        expect(result[0].interno).toBe("900");
+    });
+
+    test("si usa solo il primo numero di businessPhones", () => {
+        const result = merge([{ ...conTelefono, businessPhones: ["+39 051 6543111", "+39 051 6543222"] }], []);
+        expect(result[0].interno).toBe("111");
+    });
+
+    test("senza telefono (array vuoto o assente) l'interno resta null", () => {
+        expect(merge([{ ...conTelefono, businessPhones: [] }], [])[0].interno).toBeNull();
+        expect(merge([{ ...conTelefono, businessPhones: undefined }], [])[0].interno).toBeNull();
+    });
+
+    test("la ricerca trova l'utente dal numero breve", () => {
+        const rubrica = merge([conTelefono], []);
+        expect(filtra("456", rubrica)).toHaveLength(1);
     });
 });

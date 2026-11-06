@@ -52,10 +52,8 @@ function PersonCard({ entry, opzioni }: IPersonCardProps) {
     if (entry.tipo === "utente") {
         const user = entry.user;
 
-        // reparto e ruolo: mostra solo quelli presenti (niente "null - null")
-        const secondaryText = opzioni.mostraReparto
-            ? [user.department, user.jobTitle].filter(v => !!v).join(" - ")
-            : "";
+        // "Office" di AD: contiene già reparto e ruolo insieme, si mostra così com'è
+        const secondaryText = opzioni.mostraReparto ? (user.officeLocation ?? "").trim() : "";
 
         const mail = user.mail ?? undefined;
         const cellulare = opzioni.mostraCellulare ? (user.mobilePhone ?? undefined) : undefined;

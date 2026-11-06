@@ -2,7 +2,8 @@ import { getGraph } from "../pnpjsConfig";
 import { User } from "@microsoft/microsoft-graph-types";
 import { leggiCache, scriviCache } from "./cache";
 
-const CACHE_CHIAVE = "graphUsers";
+// la versione nella chiave scarta le vecchie voci quando cambiano i campi letti
+const CACHE_CHIAVE = "graphUsers:v2";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minuti
 
 // Se Graph non è raggiungibile (o i permessi non sono approvati) la chiamata
@@ -14,7 +15,7 @@ export async function getGraphUsers(): Promise<User[]> {
     const graph = getGraph();
 
     const utenti: User[] = await graph.users
-        .select("mail", "id", "displayName", "department", "jobTitle", "mobilePhone", "businessPhones", "userType")
+        .select("mail", "id", "displayName", "officeLocation", "mobilePhone", "businessPhones", "userType")
         .filter("accountEnabled eq true")
         .top(999)();
 

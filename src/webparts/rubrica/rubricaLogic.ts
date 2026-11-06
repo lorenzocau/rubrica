@@ -42,6 +42,14 @@ function raggruppa(vociLista: IContattoInterno[]): Map<string, IVoce> {
     return voci;
 }
 
+// Numero breve = ultime 3 cifre del "Telephone number" dell'utente (businessPhones[0] in Graph).
+// Si guardano solo le cifre, quindi "+39 051 123 456" e "0511234 56" danno entrambi "456".
+// Con meno di 3 cifre non c'è un numero breve affidabile: restituisce null.
+export function estraiNumeroBreve(telefono?: string | null): string | null {
+    const cifre = (telefono ?? "").replace(/\D/g, "");
+    return cifre.length < 3 ? null : cifre.slice(-3);
+}
+
 // Ordine alfabetico senza distinguere maiuscole e accenti ("Álvaro" prima di "Bruno").
 const collator = new Intl.Collator("it", { sensitivity: "base" });
 
@@ -73,7 +81,9 @@ export function merge(
 
     for (const user of users) {
         const mail = user.mail?.trim().toLowerCase();
-        let interno: string | null = null;
+        // di base l'interno è il numero breve preso dal telefono dell'utente;
+        // una voce nella lista con la sua mail, se c'è, lo sostituisce
+        let interno: string | null = estraiNumeroBreve(user.businessPhones?.[0]);
 
         if (mail) {
             const voce = voci.get(mail);
@@ -152,7 +162,7 @@ export function filtra(input: string, risultati: IRubricaEntry[]): IRubricaEntry
 
     return risultati.filter(entry => {
         const testo = entry.tipo === "utente"
-            ? [entry.user.displayName, entry.user.mail, entry.user.department, entry.user.jobTitle, entry.interno]
+            ? [entry.user.displayName, entry.user.mail, entry.user.officeLocation, entry.interno]
             : [entry.nome, entry.interno];
 
         const haystack = testo.map(t => normalizza(t)).join(" ");

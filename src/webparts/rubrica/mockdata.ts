@@ -206,6 +206,7 @@ function generaUtenti(): User[] {
         usate.add(key);
 
         const reparto = pick(REPARTI);
+        const ruolo = pick(reparto.jobs); // stesso ordine di estrazione di prima
         const mail = `${slugify(nome)}.${slugify(cognome)}@${CFG.DOMAIN}`;
         const id = `mock-uid-${utenti.length + 1}-${nome.slice(0, 3).toLowerCase()}`;
 
@@ -213,10 +214,13 @@ function generaUtenti(): User[] {
             id,
             displayName: `${nome} ${cognome}`,
             mail,
-            department: reparto.dept,
-            jobTitle: pick(reparto.jobs),
+            // come in AD: reparto e ruolo insieme nel campo "Office"
+            officeLocation: `${reparto.dept} - ${ruolo}`,
             mobilePhone: `+39 3${Math.floor(rand() * 9)}${("0000000" + Math.floor(rand() * 10000000)).slice(-7)}`,
-            businessPhones: [],
+            // numero breve = ultime 3 cifre; un utente ogni 9 non ha il telefono
+            businessPhones: (utenti.length + 1) % 9 === 0
+                ? []
+                : [`+39 051 6543${("00" + (((utenti.length + 1) * 37) % 1000)).slice(-3)}`],
             accountEnabled: true,
             // ogni 13esimo utente è un ospite (nessun uso del PRNG: gli altri dati restano identici)
             userType: (utenti.length + 1) % 13 === 0 ? "Guest" : "Member",
@@ -282,7 +286,7 @@ export async function getMockVociLista(): Promise<IContattoInterno[]> {
 //  🔍  DEBUG — decommentare in console per ispezionare i dati
 // ─────────────────────────────────────────────────────────────────────────────
 
-// console.table(_utenti.slice(0, 10).map(u => ({ name: u.displayName, mail: u.mail, dept: u.department })));
+// console.table(_utenti.slice(0, 10).map(u => ({ name: u.displayName, mail: u.mail, dept: u.officeLocation })));
 // console.table(_voci.slice(0, 10));
 // console.log(`Utenti: ${_utenti.length} | Voci lista: ${_voci.length}`);
 
@@ -316,8 +320,8 @@ const _esterni: IContattoInterno[] = generaEsterni();
 // Account senza mail (es. sale riunioni): servono a provare "Nascondi gli account senza mail".
 // Aggiunti dopo la generazione della lista, quindi non hanno interno.
 _utenti.push(
-    { id: "mock-uid-sala-1", displayName: "Sala Riunioni 1", department: "Direzione", userType: "Member", accountEnabled: true } as User,
-    { id: "mock-uid-sala-2", displayName: "Sala Riunioni 2", department: "Direzione", userType: "Member", accountEnabled: true } as User,
+    { id: "mock-uid-sala-1", displayName: "Sala Riunioni 1", officeLocation: "Direzione - Sala", userType: "Member", accountEnabled: true } as User,
+    { id: "mock-uid-sala-2", displayName: "Sala Riunioni 2", officeLocation: "Direzione - Sala", userType: "Member", accountEnabled: true } as User,
 );
 
 /** Simula getVociLista() sulla lista Esterni — aggiunge 250ms di latenza finta */
