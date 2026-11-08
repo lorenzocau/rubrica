@@ -15,6 +15,7 @@ import { IContattoInterno, IRubricaEntry, IRubricaWebPartProps } from "../types"
 import PersonCard from "./PersonCard";
 import { applicaVista, filtra, merge, normalizzaPageSize, risolviNomeLista } from "../rubricaLogic";
 import { PROPRIETA_DEFAULT } from "../proprieta";
+import { AVVISO_GRAPH_VUOTO, erroreGraph, erroreImprevisto, erroreLista } from "../errori";
 
 interface IEsito<T> {
   dati: T[];
@@ -23,11 +24,18 @@ interface IEsito<T> {
 
 // Esegue una sorgente dati: se fallisce registra l'avviso e restituisce [],
 // così le altre sorgenti vengono comunque mostrate. "ok" dice se è riuscita.
-async function conAvviso<T>(promessa: Promise<T[]>, avviso: string, avvisi: string[]): Promise<IEsito<T>> {
+// "descrivi" trasforma l'errore tecnico in un messaggio per l'utente (vedi errori.ts);
+// l'errore originale resta nella console per chi deve indagare.
+async function conAvviso<T>(
+  promessa: Promise<T[]>,
+  descrivi: (errore: unknown) => string,
+  avvisi: string[]
+): Promise<IEsito<T>> {
   try {
     return { dati: await promessa, ok: true };
   } catch (e) {
-    console.warn(avviso, e);
+    const avviso = descrivi(e);
+    console.warn("[Rubrica]", avviso, e);
     avvisi.push(avviso);
     return { dati: [], ok: false };
   }
@@ -82,31 +90,35 @@ function Rubrica(props: IRubricaWebPartProps) {
         const [graph, servizi, esterni] = await Promise.all([
           conAvviso(
             sorgenti.utenti(),
-            "Recupero utenti da Microsoft Graph non riuscito: la rubrica potrebbe essere incompleta.",
+            erroreGraph,
             avvisiCaricamento
           ),
           conAvviso(
             sorgenti.servizi(listaServizi),
-            `Lista "${listaServizi}" non trovata o non accessibile in questo sito: gli interni non sono disponibili.`,
+            e => erroreLista(e, listaServizi, "I servizi non sono disponibili."),
             avvisiCaricamento
           ),
           props.mostraEsterni
             ? conAvviso(
-                sorgenti.esterni(listaEsterni),
-                `Lista "${listaEsterni}" non trovata o non accessibile in questo sito: i contatti esterni non sono disponibili.`,
-                avvisiCaricamento
-              )
+              sorgenti.esterni(listaEsterni),
+              e => erroreLista(e, listaEsterni, "I contatti esterni non sono disponibili."),
+              avvisiCaricamento
+            )
             : Promise.resolve<IEsito<IContattoInterno>>({ dati: [], ok: false }),
         ]);
 
         if (annullato) return;
+        // Graph ha risposto ma senza utenti: quasi sempre è un problema di permessi
+        if (graph.ok && graph.dati.length === 0 && !props.usaDatiMock) {
+          avvisiCaricamento.push(AVVISO_GRAPH_VUOTO);
+        }
         setDatiGraph(graph.dati);
         setDatiServizi(servizi.dati);
         setDatiEsterni(esterni.dati);
         setEsterniOk(esterni.ok);
       } catch (e) {
-        console.error("Errore imprevisto nel caricamento della rubrica.", e);
-        avvisiCaricamento.push("Errore imprevisto nel caricamento della rubrica.");
+        console.error("[Rubrica] Errore imprevisto nel caricamento.", e);
+        avvisiCaricamento.push(erroreImprevisto(e));
       } finally {
         if (!annullato) {
           setAvvisi(avvisiCaricamento);
