@@ -9,7 +9,7 @@
       ],
     "name": "rubrica-client-side-solution",
     "id": "8fda6e84-a159-447e-a0fe-d65175d0c8e4",
-    "version": "1.3.1.0",
+    "version": "1.4.0.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
