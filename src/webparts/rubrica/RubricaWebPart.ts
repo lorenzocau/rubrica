@@ -138,7 +138,6 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
               groupFields: [
                 PropertyPaneToggle("mostraContatore", { label: "Contatore utenti/servizi" }),
                 PropertyPaneToggle("mostraPresenza", { label: "Indicatore di presenza" }),
-                PropertyPaneToggle("mostraMail", { label: "Indirizzo mail" }),
                 PropertyPaneToggle("mostraReparto", { label: "Reparto e job title degli utenti / reparto dei servizi" }),
                 PropertyPaneToggle("mostraCellulare", { label: "Cellulare aziendale e numero breve" }),
                 PropertyPaneToggle("linkCliccabili", { label: "Link su mail, telefono e chat Teams" })

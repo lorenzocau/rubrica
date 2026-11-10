@@ -20,7 +20,6 @@ export const PROPRIETA_DEFAULT: IRubricaWebPartProps = {
 
   mostraContatore: true,
   mostraPresenza: true,
-  mostraMail: true,
   mostraReparto: true,
   mostraCellulare: true,
   linkCliccabili: true,

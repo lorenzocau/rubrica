@@ -667,10 +667,10 @@ describe("risolviProprieta", () => {
     });
 
     test("valori del tipo sbagliato vengono scartati", () => {
-        const sporche = { risultatiPerPagina: "50", mostraMail: "no" } as unknown as Partial<IRubricaWebPartProps>;
+        const sporche = { risultatiPerPagina: "50", mostraCellulare: "no" } as unknown as Partial<IRubricaWebPartProps>;
         const r = risolviProprieta(sporche);
         expect(r.risultatiPerPagina).toBe(PROPRIETA_DEFAULT.risultatiPerPagina);
-        expect(r.mostraMail).toBe(PROPRIETA_DEFAULT.mostraMail);
+        expect(r.mostraCellulare).toBe(PROPRIETA_DEFAULT.mostraCellulare);
     });
 
     test("nascondiSenzaTelefono è attivo di default, ma un valore salvato false resta false", () => {

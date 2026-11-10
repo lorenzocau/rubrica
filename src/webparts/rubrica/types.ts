@@ -72,10 +72,9 @@ export interface IRubricaWebPartProps {
   // Visualizzazione
   mostraContatore: boolean;
   mostraPresenza: boolean;
-  mostraMail: boolean;
   mostraReparto: boolean;     // job title degli utenti / reparto dei servizi
   mostraCellulare: boolean;   // cellulare aziendale + numero breve
-  linkCliccabili: boolean;    // mailto, tel e chat Teams
+  linkCliccabili: boolean;    // tel e chat Teams
 
   // Sviluppo/test
   usaDatiMock: boolean;
@@ -84,7 +83,6 @@ export interface IRubricaWebPartProps {
 // Sottoinsieme usato da PersonCard
 export interface IOpzioniCard {
   mostraPresenza: boolean;
-  mostraMail: boolean;
   mostraReparto: boolean;
   mostraCellulare: boolean;
   linkCliccabili: boolean;
