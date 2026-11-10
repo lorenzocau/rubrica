@@ -6,6 +6,7 @@ export interface IDettaglioErrore {
     stato?: number;  // codice HTTP, se l'errore ne ha uno (401, 403, 404...)
     rete: boolean;   // true = la richiesta non è arrivata a destinazione
     testo: string;   // messaggio tecnico, accorciato
+    colonneMancanti?: string[]; // colonne della lista che non esistono (le imposta spService)
 }
 
 const MAX_TESTO = 160;
@@ -13,7 +14,7 @@ const MAX_TESTO = 160;
 // Legge un errore "sconosciuto" senza fidarsi della sua forma: PnPjs lancia
 // HttpRequestError (con .status), il browser lancia TypeError se manca la rete.
 export function leggiErrore(e: unknown): IDettaglioErrore {
-    const err = (e ?? {}) as { status?: unknown; response?: { status?: unknown }; message?: unknown };
+    const err = (e ?? {}) as { status?: unknown; response?: { status?: unknown }; message?: unknown; colonneMancanti?: unknown };
 
     const messaggio = typeof err.message === "string" ? err.message.trim() : "";
 
@@ -31,7 +32,11 @@ export function leggiErrore(e: unknown): IDettaglioErrore {
     );
 
     const testo = messaggio.length > MAX_TESTO ? messaggio.slice(0, MAX_TESTO) + "…" : messaggio;
-    return { stato, rete, testo };
+    const colonneMancanti = Array.isArray(err.colonneMancanti)
+        ? err.colonneMancanti.filter((c): c is string => typeof c === "string")
+        : undefined;
+
+    return { stato, rete, testo, colonneMancanti };
 }
 
 function codice(d: IDettaglioErrore): string {
@@ -71,8 +76,23 @@ export const AVVISO_GRAPH_VUOTO =
     "Microsoft Graph non ha restituito nessun utente: controlla il permesso User.Read.All e che esistano account attivi.";
 
 // --- Liste SharePoint ---
+// Colonne attese di default (lista servizi). Per un'altra lista si passa l'elenco giusto.
+export const COLONNE_LISTA_DEFAULT = ["Contatto", "NumeroInterno"];
+
+// ["A"] -> '"A"'; ["A", "B"] -> '"A" e "B"'; ["A", "B", "C"] -> '"A", "B" e "C"'
+function elencoColonne(nomi: string[]): string {
+    const tra = nomi.map(n => `"${n}"`);
+    return tra.length <= 1 ? tra.join("") : `${tra.slice(0, -1).join(", ")} e ${tra[tra.length - 1]}`;
+}
+
 // "conseguenza" dice cosa manca all'utente, es. "gli interni dei servizi non sono disponibili".
-export function erroreLista(e: unknown, nomeLista: string, conseguenza: string): string {
+// "colonne" sono i nomi delle colonne che la lista deve avere, per il messaggio sulle colonne mancanti.
+export function erroreLista(
+    e: unknown,
+    nomeLista: string,
+    conseguenza: string,
+    colonne: string[] = COLONNE_LISTA_DEFAULT
+): string {
     const d = leggiErrore(e);
     const lista = `"${nomeLista}"`;
 
@@ -86,8 +106,12 @@ export function erroreLista(e: unknown, nomeLista: string, conseguenza: string):
         return `Non hai i permessi per leggere la lista ${lista}${codice(d)}: chiedi accesso in lettura a chi gestisce il sito. ${conseguenza}`;
     }
     // colonna mancante: SharePoint risponde 400 con "field or property ... does not exist"
+    if (d.colonneMancanti && d.colonneMancanti.length > 0) {
+        const m = d.colonneMancanti;
+        return `Nella lista ${lista} ${m.length === 1 ? "manca la colonna" : "mancano le colonne"} ${elencoColonne(m)}: controlla i nomi delle colonne. ${conseguenza}`;
+    }
     if (d.stato === 400 || /field or property|does not exist/i.test(d.testo)) {
-        return `La lista ${lista} esiste ma non ha le colonne "Contatto" e "NumeroInterno"${codice(d)}: controlla i nomi interni delle colonne. ${conseguenza}`;
+        return `La lista ${lista} esiste ma non ha le colonne ${elencoColonne(colonne)}${codice(d)}: controlla i nomi delle colonne. ${conseguenza}`;
     }
     if (d.stato === 429) {
         return `SharePoint sta limitando le richieste${codice(d)}: riprova tra qualche minuto. ${conseguenza}`;

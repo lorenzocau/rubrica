@@ -125,6 +125,11 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
                   label: "Nascondi gli account senza mail",
                   onText: "Nascosti",
                   offText: "Visibili"
+                }),
+                PropertyPaneToggle("nascondiSenzaTelefono", {
+                  label: "Nascondi gli utenti senza alcun numero (interno, cellulare, cellulare breve)",
+                  onText: "Nascosti",
+                  offText: "Visibili"
                 })
               ]
             },
@@ -134,8 +139,8 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
                 PropertyPaneToggle("mostraContatore", { label: "Contatore utenti/servizi" }),
                 PropertyPaneToggle("mostraPresenza", { label: "Indicatore di presenza" }),
                 PropertyPaneToggle("mostraMail", { label: "Indirizzo mail" }),
-                PropertyPaneToggle("mostraReparto", { label: "Ufficio (reparto e ruolo)" }),
-                PropertyPaneToggle("mostraCellulare", { label: "Numero di cellulare" }),
+                PropertyPaneToggle("mostraReparto", { label: "Reparto e job title degli utenti / reparto dei servizi" }),
+                PropertyPaneToggle("mostraCellulare", { label: "Cellulare aziendale e numero breve" }),
                 PropertyPaneToggle("linkCliccabili", { label: "Link su mail, telefono e chat Teams" })
               ]
             },

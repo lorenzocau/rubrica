@@ -33,6 +33,12 @@ describe("leggiErrore", () => {
         expect(leggiErrore(httpError(500)).rete).toBe(false);
     });
 
+    test("legge le colonne mancanti indicate dall'errore e ignora valori non validi", () => {
+        const e = Object.assign(new Error("x"), { colonneMancanti: ["A", 5, "B"] });
+        expect(leggiErrore(e).colonneMancanti).toEqual(["A", "B"]);
+        expect(leggiErrore(new Error("x")).colonneMancanti).toBeUndefined();
+    });
+
     test("valori strani non lanciano eccezioni", () => {
         expect(leggiErrore(undefined).testo).toBe("");
         expect(leggiErrore(null).rete).toBe(false);
@@ -104,6 +110,25 @@ describe("erroreLista", () => {
     test("404 con 'does not exist' resta 'lista non trovata'", () => {
         const e = httpError(404, "The list does not exist");
         expect(erroreLista(e, "Rubrica", conseguenza)).toContain("non trovata");
+    });
+
+    test("colonne mancanti: se lo spService le indica, il messaggio le nomina", () => {
+        const uno = Object.assign(new Error("x"), { status: 400, colonneMancanti: ["Nome"] });
+        const m1 = erroreLista(uno, "Esterni", conseguenza, ["Nome", "Numero", "Numero breve"]);
+        expect(m1).toContain("manca la colonna");
+        expect(m1).toContain('"Nome"');
+        expect(m1).not.toContain("Numero breve");
+
+        const due = Object.assign(new Error("x"), { status: 400, colonneMancanti: ["Numero", "Numero breve"] });
+        const m2 = erroreLista(due, "Esterni", conseguenza);
+        expect(m2).toContain("mancano le colonne");
+        expect(m2).toContain('"Numero" e "Numero breve"');
+    });
+
+    test("400 generico: elenca le colonne attese della lista", () => {
+        const m = erroreLista(httpError(400), "Esterni", conseguenza, ["Nome", "Numero", "Numero breve"]);
+        expect(m).toContain('"Nome", "Numero" e "Numero breve"');
+        expect(erroreLista(httpError(400), "Rubrica", conseguenza)).toContain('"Contatto" e "NumeroInterno"');
     });
 
     test("rete assente e 5xx", () => {

@@ -33,6 +33,7 @@
       "esterniInizialmenteVisibili": true,
       "soloMembri": true,
       "nascondiSenzaMail": true,
+      "nascondiSenzaTelefono": true,
       "mostraContatore": true,
       "mostraPresenza": true,
       "mostraMail": true,

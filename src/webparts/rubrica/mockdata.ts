@@ -43,8 +43,7 @@ const CFG = {
 //  📦  IMPORT — adatta i percorsi al tuo progetto se necessario
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { User } from "@microsoft/microsoft-graph-types";
-import { IContattoInterno } from "./types"; // ← percorso relativo standard
+import { IContattoEsterno, IContattoInterno, UtenteGraph } from "./types"; // ← percorso relativo standard
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  🎲  PRNG deterministico (mulberry32) — stesso seed = stessi dati sempre
@@ -191,10 +190,10 @@ function slugify(s: string): string {
 }
 
 /** Genera un array di User Graph finti */
-function generaUtenti(): User[] {
+function generaUtenti(): UtenteGraph[] {
     // Assicura coppie nome+cognome uniche
     const usate = new Set<string>();
-    const utenti: User[] = [];
+    const utenti: UtenteGraph[] = [];
 
     let tentativi = 0;
     while (utenti.length < CFG.NUM_UTENTI && tentativi < 10000) {
@@ -210,21 +209,30 @@ function generaUtenti(): User[] {
         const mail = `${slugify(nome)}.${slugify(cognome)}@${CFG.DOMAIN}`;
         const id = `mock-uid-${utenti.length + 1}-${nome.slice(0, 3).toLowerCase()}`;
 
+        // il PRNG si consuma sempre, anche quando il cellulare poi non viene assegnato
+        const cellulare = `+39 3${Math.floor(rand() * 9)}${("0000000" + Math.floor(rand() * 10000000)).slice(-7)}`;
+        const n = utenti.length + 1;
+
         utenti.push({
             id,
             displayName: `${nome} ${cognome}`,
             mail,
-            // come in AD: reparto e ruolo insieme nel campo "Office"
-            officeLocation: `${reparto.dept} - ${ruolo}`,
-            mobilePhone: `+39 3${Math.floor(rand() * 9)}${("0000000" + Math.floor(rand() * 10000000)).slice(-7)}`,
+            // come in AD: department e jobTitle, mostrati come "Reparto - Job title"
+            department: reparto.dept,
+            jobTitle: ruolo,
+            // cellulare aziendale: un utente ogni 5 non lo ha
+            mobilePhone: n % 5 === 0 ? undefined : cellulare,
+            // numero breve del cellulare (in AD: faxNumber): solo per metà dei cellulari,
+            // nel range 400-551 (unici per n < 152, e fuori da quello degli interni)
+            faxNumber: n % 5 !== 0 && n % 2 === 0 ? String(400 + ((n * 53) % 152)) : undefined,
             // numero breve = ultime 3 cifre; un utente ogni 9 non ha il telefono
-            businessPhones: (utenti.length + 1) % 9 === 0
+            businessPhones: n % 9 === 0
                 ? []
-                : [`+39 051 6543${("00" + (((utenti.length + 1) * 37) % 1000)).slice(-3)}`],
+                : [`+39 051 6543${("00" + ((n * 37) % 1000)).slice(-3)}`],
             accountEnabled: true,
             // ogni 13esimo utente è un ospite (nessun uso del PRNG: gli altri dati restano identici)
-            userType: (utenti.length + 1) % 13 === 0 ? "Guest" : "Member",
-        } as User);
+            userType: n % 13 === 0 ? "Guest" : "Member",
+        } as UtenteGraph);
     }
 
     return utenti;
@@ -241,8 +249,19 @@ function nuovoInterno(): string {
     return i;
 }
 
+// Colonna "Reparto" della lista servizi, ricavata dal nome (nessun uso del PRNG).
+// Per alcuni servizi resta vuoto: così si prova anche il caso "reparto assente".
+function repartoServizio(nome: string): string {
+    if (/magazzino|spedizion|accettazione|autorimessa/i.test(nome)) return "Logistica";
+    if (/reparto|manutenzione|officina|sala|impianto|ricambi|pronto intervento/i.test(nome)) return "Produzione";
+    if (/laborator|qualit|degustazione/i.test(nome)) return "Qualità";
+    if (/acquisti|import|doganale|export|ordini|commerciale|clienti|vendita|reclami/i.test(nome)) return "Commerciale";
+    if (/helpdesk|server|stampante|fax/i.test(nome)) return "IT";
+    return ""; // centralino, mensa, portineria...
+}
+
 /** Genera le voci lista SharePoint */
-function generaVociLista(utenti: User[]): IContattoInterno[] {
+function generaVociLista(utenti: UtenteGraph[]): IContattoInterno[] {
     const voci: IContattoInterno[] = [];
 
     // Quanti utenti hanno un interno
@@ -256,7 +275,7 @@ function generaVociLista(utenti: User[]): IContattoInterno[] {
     // Servizi aggiuntivi
     const serviziScelti = pickN(NOMI_SERVIZI, CFG.NUM_SERVIZI);
     for (const nome of serviziScelti) {
-        voci.push({ contatto: nome, interno: nuovoInterno() });
+        voci.push({ contatto: nome, interno: nuovoInterno(), reparto: repartoServizio(nome) });
     }
 
     return voci;
@@ -267,11 +286,11 @@ function generaVociLista(utenti: User[]): IContattoInterno[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Generazione una-tantum (singleton, dati stabili per tutta la sessione)
-const _utenti: User[] = generaUtenti();
+const _utenti: UtenteGraph[] = generaUtenti();
 const _voci: IContattoInterno[] = generaVociLista(_utenti);
 
 /** Simula getGraphUsers() — aggiunge 300ms di latenza finta */
-export async function getMockGraphUsers(): Promise<User[]> {
+export async function getMockGraphUsers(): Promise<UtenteGraph[]> {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return _utenti;
 }
@@ -286,7 +305,7 @@ export async function getMockVociLista(): Promise<IContattoInterno[]> {
 //  🔍  DEBUG — decommentare in console per ispezionare i dati
 // ─────────────────────────────────────────────────────────────────────────────
 
-// console.table(_utenti.slice(0, 10).map(u => ({ name: u.displayName, mail: u.mail, dept: u.officeLocation })));
+// console.table(_utenti.slice(0, 10).map(u => ({ name: u.displayName, mail: u.mail, job: u.jobTitle })));
 // console.table(_voci.slice(0, 10));
 // console.log(`Utenti: ${_utenti.length} | Voci lista: ${_voci.length}`);
 
@@ -307,25 +326,38 @@ const NOMI_ESTERNI = [
     "Ditta Disinfestazione", "Centro Analisi Esterno",
 ];
 
-/** Genera le voci della lista "Esterni" */
-function generaEsterni(): IContattoInterno[] {
-    return pickN(NOMI_ESTERNI, CFG.NUM_ESTERNI).map(nome => ({
-        contatto: nome,
-        interno: nuovoInterno(),
-    }));
+/** Genera le voci della lista "Esterni": Nome + Numero (intero) + Numero breve */
+function generaEsterni(): IContattoEsterno[] {
+    return pickN(NOMI_ESTERNI, CFG.NUM_ESTERNI).map((nome, i) => {
+        const numero = `+39 051 ${Math.floor(rand() * 9000000) + 1000000}`;
+        return {
+            nome,
+            // uno ogni 7 non ha il numero breve, uno ogni 11 non ha il numero intero
+            numero: (i + 1) % 11 === 0 ? "" : numero,
+            numeroBreve: (i + 1) % 7 === 0 ? "" : nuovoInterno(),
+        };
+    });
 }
 
-const _esterni: IContattoInterno[] = generaEsterni();
+const _esterni: IContattoEsterno[] = generaEsterni();
 
 // Account senza mail (es. sale riunioni): servono a provare "Nascondi gli account senza mail".
 // Aggiunti dopo la generazione della lista, quindi non hanno interno.
 _utenti.push(
-    { id: "mock-uid-sala-1", displayName: "Sala Riunioni 1", officeLocation: "Direzione - Sala", userType: "Member", accountEnabled: true } as User,
-    { id: "mock-uid-sala-2", displayName: "Sala Riunioni 2", officeLocation: "Direzione - Sala", userType: "Member", accountEnabled: true } as User,
+    { id: "mock-uid-sala-1", displayName: "Sala Riunioni 1", jobTitle: "Sala", userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-sala-2", displayName: "Sala Riunioni 2", jobTitle: "Sala", userType: "Member", accountEnabled: true } as UtenteGraph,
+);
+
+// Account con mail ma senza alcun numero: servono a provare "Nascondi gli utenti senza alcun numero".
+// Il terzo ha solo il numero breve del cellulare, quindi resta sempre visibile.
+_utenti.push(
+    { id: "mock-uid-notel-1", displayName: "Zeno Senzatelefono", mail: `zeno.senzatelefono@${CFG.DOMAIN}`, jobTitle: "Consulente", userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-notel-2", displayName: "Zara Senzanumeri", mail: `zara.senzanumeri@${CFG.DOMAIN}`, jobTitle: "Stagista", businessPhones: [], userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-breve-1", displayName: "Zoe Solobreve", mail: `zoe.solobreve@${CFG.DOMAIN}`, jobTitle: "Tecnico", faxNumber: "555", userType: "Member", accountEnabled: true } as UtenteGraph,
 );
 
 /** Simula getVociLista() sulla lista Esterni — aggiunge 250ms di latenza finta */
-export async function getMockEsterni(): Promise<IContattoInterno[]> {
+export async function getMockEsterni(): Promise<IContattoEsterno[]> {
     await new Promise((resolve) => setTimeout(resolve, 250));
     return _esterni;
 }

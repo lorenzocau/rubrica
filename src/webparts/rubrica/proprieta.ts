@@ -16,6 +16,7 @@ export const PROPRIETA_DEFAULT: IRubricaWebPartProps = {
 
   soloMembri: true,
   nascondiSenzaMail: true,
+  nascondiSenzaTelefono: true,
 
   mostraContatore: true,
   mostraPresenza: true,

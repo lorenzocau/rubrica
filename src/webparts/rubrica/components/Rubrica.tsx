@@ -6,16 +6,19 @@ import { Text } from "@fluentui/react/lib/Text";
 import { Checkbox } from "@fluentui/react/lib/Checkbox";
 import { Spinner, SpinnerSize } from "@fluentui/react/lib/Spinner";
 import { MessageBar, MessageBarType } from "@fluentui/react/lib/MessageBar";
-import { User } from "@microsoft/microsoft-graph-types";
 
 // dati reali (i dati mock vengono caricati a richiesta, vedi getSorgenti)
 import { getGraphUsers } from "../services/graphService";
-import { getVociLista } from "../services/spService";
-import { IContattoInterno, IRubricaEntry, IRubricaWebPartProps } from "../types";
+import { getVociEsterni, getVociLista } from "../services/spService";
+import { IContattoEsterno, IContattoInterno, IRubricaEntry, IRubricaWebPartProps, UtenteGraph } from "../types";
 import PersonCard from "./PersonCard";
-import { applicaVista, filtra, merge, normalizzaPageSize, risolviNomeLista } from "../rubricaLogic";
+import { applicaVista, filtra, merge, normalizzaPageSize, numeroBreveNonAssegnato, risolviNomeLista } from "../rubricaLogic";
 import { PROPRIETA_DEFAULT } from "../proprieta";
-import { AVVISO_GRAPH_VUOTO, erroreGraph, erroreImprevisto, erroreLista } from "../errori";
+import { AVVISO_GRAPH_VUOTO, COLONNE_LISTA_DEFAULT, erroreGraph, erroreImprevisto, erroreLista } from "../errori";
+
+// colonne attese nelle liste, per il messaggio d'errore sulle colonne mancanti
+const COLONNE_SERVIZI = [...COLONNE_LISTA_DEFAULT, "Reparto"];
+const COLONNE_ESTERNI = ["Nome", "Numero", "Numero breve"];
 
 interface IEsito<T> {
   dati: T[];
@@ -42,9 +45,9 @@ async function conAvviso<T>(
 }
 
 interface ISorgenti {
-  utenti: () => Promise<User[]>;
+  utenti: () => Promise<UtenteGraph[]>;
   servizi: (lista: string) => Promise<IContattoInterno[]>;
-  esterni: (lista: string) => Promise<IContattoInterno[]>;
+  esterni: (lista: string) => Promise<IContattoEsterno[]>;
 }
 
 // I dati finti stanno in un chunk separato: il browser lo scarica solo se
@@ -58,13 +61,13 @@ async function getSorgenti(usaMock: boolean): Promise<ISorgenti> {
       esterni: () => mock.getMockEsterni(),
     };
   }
-  return { utenti: getGraphUsers, servizi: getVociLista, esterni: getVociLista };
+  return { utenti: getGraphUsers, servizi: getVociLista, esterni: getVociEsterni };
 }
 
 function Rubrica(props: IRubricaWebPartProps) {
-  const [datiGraph, setDatiGraph] = useState<User[]>([]);
+  const [datiGraph, setDatiGraph] = useState<UtenteGraph[]>([]);
   const [datiServizi, setDatiServizi] = useState<IContattoInterno[]>([]);
-  const [datiEsterni, setDatiEsterni] = useState<IContattoInterno[]>([]);
+  const [datiEsterni, setDatiEsterni] = useState<IContattoEsterno[]>([]);
   const [esterniOk, setEsterniOk] = useState<boolean>(false);
   const [includiEsterni, setIncludiEsterni] = useState<boolean>(props.esterniInizialmenteVisibili);
   const [ricerca, setRicerca] = useState<string>("");
@@ -95,16 +98,16 @@ function Rubrica(props: IRubricaWebPartProps) {
           ),
           conAvviso(
             sorgenti.servizi(listaServizi),
-            e => erroreLista(e, listaServizi, "I servizi non sono disponibili."),
+            e => erroreLista(e, listaServizi, "I servizi non sono disponibili.", COLONNE_SERVIZI),
             avvisiCaricamento
           ),
           props.mostraEsterni
             ? conAvviso(
               sorgenti.esterni(listaEsterni),
-              e => erroreLista(e, listaEsterni, "I contatti esterni non sono disponibili."),
+              e => erroreLista(e, listaEsterni, "I contatti esterni non sono disponibili.", COLONNE_ESTERNI),
               avvisiCaricamento
             )
-            : Promise.resolve<IEsito<IContattoInterno>>({ dati: [], ok: false }),
+            : Promise.resolve<IEsito<IContattoEsterno>>({ dati: [], ok: false }),
         ]);
 
         if (annullato) return;
@@ -148,9 +151,10 @@ function Rubrica(props: IRubricaWebPartProps) {
     () => applicaVista(rubricaCompleta, {
       soloMembri: props.soloMembri,
       nascondiSenzaMail: props.nascondiSenzaMail,
+      nascondiSenzaTelefono: props.nascondiSenzaTelefono,
       includiEsterni: esterniDisponibili && includiEsterni,
     }),
-    [rubricaCompleta, props.soloMembri, props.nascondiSenzaMail, esterniDisponibili, includiEsterni]
+    [rubricaCompleta, props.soloMembri, props.nascondiSenzaMail, props.nascondiSenzaTelefono, esterniDisponibili, includiEsterni]
   );
 
   const ricercaPulita = ricerca.trim();
@@ -159,6 +163,16 @@ function Rubrica(props: IRubricaWebPartProps) {
   const filtrati = useMemo<IRubricaEntry[]>(
     () => (mostraTutto ? visibile : filtra(ricerca, visibile)),
     [mostraTutto, ricerca, visibile]
+  );
+
+  // Cercando un numero breve dentro l'intervallo di quelli degli esterni ma non assegnato
+  // a nessuno, si avvisa. Si guarda l'elenco completo (non quello filtrato) e solo se gli
+  // esterni sono inclusi: con la checkbox spenta potrebbe essere proprio il numero di un esterno.
+  const numeroLibero = useMemo(
+    () => (esterniDisponibili && includiEsterni && ricercaPulita !== "")
+      ? numeroBreveNonAssegnato(ricercaPulita, rubricaCompleta)
+      : null,
+    [esterniDisponibili, includiEsterni, ricercaPulita, rubricaCompleta]
   );
 
   useEffect(() => {
@@ -231,7 +245,13 @@ function Rubrica(props: IRubricaWebPartProps) {
           Scrivi nel campo di ricerca per trovare un contatto.
         </Text>
       )}
-      {filtrati.length === 0 && (ricercaPulita !== "" || mostraTutto) && (
+      {numeroLibero && (
+        <MessageBar messageBarType={MessageBarType.info}>
+          Il numero breve <strong>{numeroLibero.numero}</strong> rientra nell’intervallo dei numeri
+          brevi degli esterni ({numeroLibero.min}–{numeroLibero.max}) ma non è associato a nessun contatto.
+        </MessageBar>
+      )}
+      {filtrati.length === 0 && !numeroLibero && (ricercaPulita !== "" || mostraTutto) && (
         <Text variant="medium" style={{ color: "#605e5c", display: "block", margin: "12px 0" }}>
           {mostraTutto ? "Nessun contatto disponibile." : `Nessun risultato per “${ricercaPulita}”.`}
         </Text>

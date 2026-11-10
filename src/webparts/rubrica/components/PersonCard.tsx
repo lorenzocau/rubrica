@@ -4,6 +4,7 @@ import { Link } from "@fluentui/react/lib/Link";
 import { IconButton } from "@fluentui/react/lib/Button";
 import { mergeStyles } from "@fluentui/react/lib/Styling";
 import { IOpzioniCard, IRubricaEntry } from "../types";
+import { descrizioneUtente, dividiNumeri, SEPARATORE_INTERNI } from "../rubricaLogic";
 
 interface IPersonCardProps {
     entry: IRubricaEntry;
@@ -47,16 +48,39 @@ const cellulareStyle = mergeStyles({
     textAlign: "right"
 });
 
+// "333 1234567" -> "tel:3331234567"
+function hrefTel(numero: string): string {
+    return `tel:${numero.replace(/\s+/g, "")}`;
+}
+
+// Un numero con il link per chiamare, oppure solo il testo.
+function renderNumero(numero: string, cliccabile: boolean): React.ReactNode {
+    return cliccabile ? <Link href={hrefTel(numero)}>{numero}</Link> : numero;
+}
+
+// Più numeri (uniti con " / " in rubricaLogic): ognuno ha il suo link.
+function renderNumeri(numeri: string, cliccabile: boolean): React.ReactNode {
+    return dividiNumeri(numeri).map((n, i) => (
+        <React.Fragment key={i}>
+            {i > 0 && SEPARATORE_INTERNI}
+            {renderNumero(n, cliccabile)}
+        </React.Fragment>
+    ));
+}
+
 function PersonCard({ entry, opzioni }: IPersonCardProps) {
 
     if (entry.tipo === "utente") {
         const user = entry.user;
 
-        // "Office" di AD: contiene già reparto e ruolo insieme, si mostra così com'è
-        const secondaryText = opzioni.mostraReparto ? (user.officeLocation ?? "").trim() : "";
+        // "Reparto - Job title" di AD (department e jobTitle)
+        const secondaryText = opzioni.mostraReparto ? descrizioneUtente(user) : "";
 
         const mail = user.mail ?? undefined;
-        const cellulare = opzioni.mostraCellulare ? (user.mobilePhone ?? undefined) : undefined;
+
+        // cellulare aziendale (mobilePhone) e suo numero breve (faxNumber)
+        const cellulare = opzioni.mostraCellulare ? (user.mobilePhone ?? "").trim() : "";
+        const cellulareBreve = opzioni.mostraCellulare ? (user.faxNumber ?? "").trim() : "";
 
         const mailVisibile = opzioni.mostraMail && !!mail;
         const mailCliccabile = mailVisibile && opzioni.linkCliccabili;
@@ -76,13 +100,13 @@ function PersonCard({ entry, opzioni }: IPersonCardProps) {
                 <div className={destraStyle}>
                     <div className={numeriStyle}>
                         <div className={numeroStyle}>
-                            {entry.interno ? `int. ${entry.interno}` : "—"}
+                            {entry.interno ? entry.interno : "—"}
                         </div>
-                        {cellulare && (
+                        {(cellulare !== "" || cellulareBreve !== "") && (
                             <div className={cellulareStyle}>
-                                {opzioni.linkCliccabili
-                                    ? <Link href={`tel:${cellulare.replace(/\s+/g, "")}`}>{cellulare}</Link>
-                                    : cellulare}
+                                {cellulare !== "" && renderNumero(cellulare, opzioni.linkCliccabili)}
+                                {cellulare !== "" && cellulareBreve !== "" && " - "}
+                                {cellulareBreve}
                             </div>
                         )}
                     </div>
@@ -103,18 +127,49 @@ function PersonCard({ entry, opzioni }: IPersonCardProps) {
     // PersonaSize.size100 = fino a tertiary
     // PersonaSize.size72 = fino a secondary
 
-    // servizio / esterno: nessun account AD, solo nome e numero
+    // servizio: nessun account AD, nome, reparto (al posto del job title) e interno
+    if (entry.tipo === "servizio") {
+        const secondaryText = opzioni.mostraReparto && entry.reparto !== "" ? entry.reparto : "Servizio";
+
+        return (
+            <div className={cardStyle}>
+                <Persona
+                    text={entry.nome}
+                    secondaryText={secondaryText}
+                    size={PersonaSize.size40}
+                />
+                <div className={numeriStyle}>
+                    <div className={numeroStyle}>
+                        {entry.interno}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // esterno: sopra il numero breve (con prefisso), sotto il numero per intero.
+    // Se manca uno dei due, quello che c'è prende il posto principale.
+    const haBreve = entry.numeroBreve !== "";
+    const haNumero = entry.numero !== "";
+
     return (
         <div className={cardStyle}>
             <Persona
                 text={entry.nome}
-                secondaryText={entry.tipo === "esterno" ? "Esterno" : "Servizio"}
-                size={PersonaSize.size48}
+                secondaryText="Esterno"
+                size={PersonaSize.size40}
             />
             <div className={numeriStyle}>
-                <div className={numeroStyle}>
-                    {`int. ${entry.interno}`}
-                </div>
+                {haBreve && (
+                    <div className={numeroStyle}>
+                        {`nr. breve ${entry.numeroBreve}`}
+                    </div>
+                )}
+                {haNumero && (
+                    <div className={haBreve ? cellulareStyle : numeroStyle}>
+                        {renderNumeri(entry.numero, opzioni.linkCliccabili)}
+                    </div>
+                )}
             </div>
         </div>
     );

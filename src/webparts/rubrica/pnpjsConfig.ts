@@ -18,6 +18,7 @@ import { spfi, SPFI, SPFx as spSPFx } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
+import "@pnp/sp/fields"; // serve a leggere i nomi delle colonne delle liste (vedi spService)
 
 // --- Graph ---
 // graphfi  = Graph Factory Interface, il punto di ingresso per le chiamate Graph

@@ -1,34 +1,40 @@
 import {
     merge, filtra, applicaVista, ordina, estraiNumeroBreve,
+    haTelefono, descrizioneUtente, dividiNumeri, intervalloNumeriBreviEsterni, numeroBreveNonAssegnato,
     normalizzaPageSize, risolviNomeLista, validaNomeLista,
     PAGE_SIZE_DEFAULT, PAGE_SIZE_MIN, PAGE_SIZE_MAX
 } from "../rubricaLogic";
 import { risolviProprieta, PROPRIETA_DEFAULT } from "../proprieta";
 import { User } from "@microsoft/microsoft-graph-types";
-import { IContattoInterno, IRubricaWebPartProps } from "../types";
+import { IContattoEsterno, IContattoInterno, IRubricaEntry, IRubricaWebPartProps, UtenteGraph } from "../types";
 
 // --- fixture riutilizzabili ---
 const userConInterno: User = {
     mail: "mario.rossi@coind.it",
     displayName: "Mario Rossi",
-    officeLocation: "Qualità - Responsabile",
+    jobTitle: "Qualità - Responsabile",
 };
 
 const userSenzaInterno: User = {
     mail: "anna.bianchi@coind.it",
     displayName: "Anna Bianchi",
-    officeLocation: "Amministrazione - Impiegata",
+    jobTitle: "Amministrazione - Impiegata",
 };
 
 const userSenzaMail: User = {
     displayName: "Utente Senza Mail",
-    officeLocation: "IT",
+    jobTitle: "IT",
 };
 
 const vociLista: IContattoInterno[] = [
     { contatto: "mario.rossi@coind.it", interno: "101" },
     { contatto: "reception", interno: "0" },
 ];
+
+// gli esterni non hanno "interno" (hanno numero e numero breve)
+function internoDi(entry?: IRubricaEntry): string | null | undefined {
+    return entry && entry.tipo !== "esterno" ? entry.interno : undefined;
+}
 
 // ============================================================
 // merge
@@ -39,14 +45,14 @@ describe("merge", () => {
         const result = merge([userConInterno], vociLista);
         const entry = result.find(e => e.tipo === "utente" && e.user.mail === "mario.rossi@coind.it");
         expect(entry).toBeDefined();
-        expect(entry?.interno).toBe("101");
+        expect(internoDi(entry)).toBe("101");
     });
 
     test("utente senza corrispondenza viene inserito con interno null", () => {
         const result = merge([userSenzaInterno], vociLista);
         const entry = result.find(e => e.tipo === "utente" && e.user.mail === "anna.bianchi@coind.it");
         expect(entry).toBeDefined();
-        expect(entry?.interno).toBeNull();
+        expect(internoDi(entry)).toBeNull();
     });
 
     test("voce lista senza corrispondenza in Graph diventa IRubricaServizio", () => {
@@ -63,14 +69,14 @@ describe("merge", () => {
         const result = merge([userSenzaMail], vociLista);
         const entry = result.find(e => e.tipo === "utente");
         expect(entry).toBeDefined();
-        expect(entry?.interno).toBeNull();
+        expect(internoDi(entry)).toBeNull();
     });
 
     test("il matching è case-insensitive", () => {
         const userMailMaiuscola: User = { ...userConInterno, mail: "MARIO.ROSSI@COIND.IT" };
         const result = merge([userMailMaiuscola], vociLista);
         const entry = result.find(e => e.tipo === "utente");
-        expect(entry?.interno).toBe("101");
+        expect(internoDi(entry)).toBe("101");
     });
 
     test("entrambi gli array vuoti restituiscono array vuoto", () => {
@@ -89,7 +95,7 @@ describe("merge", () => {
     test("spazi ai bordi di contatto e interno vengono ignorati", () => {
         const result = merge([userConInterno], [{ contatto: "  Mario.Rossi@coind.it ", interno: " 101 " }]);
         expect(result).toHaveLength(1); // nessun servizio orfano
-        expect(result[0].interno).toBe("101");
+        expect(internoDi(result[0])).toBe("101");
     });
 
     test("righe con contatto o interno vuoti vengono ignorate", () => {
@@ -106,7 +112,7 @@ describe("merge", () => {
             { contatto: "mario.rossi@coind.it", interno: "101" },
             { contatto: "mario.rossi@coind.it", interno: "102" },
         ]);
-        expect(result[0].interno).toBe("101 / 102");
+        expect(internoDi(result[0])).toBe("101 / 102");
     });
 
     test("stesso contatto con lo stesso interno ripetuto non viene duplicato", () => {
@@ -114,7 +120,7 @@ describe("merge", () => {
             { contatto: "mario.rossi@coind.it", interno: "101" },
             { contatto: "MARIO.ROSSI@coind.it", interno: "101" },
         ]);
-        expect(result[0].interno).toBe("101");
+        expect(internoDi(result[0])).toBe("101");
     });
 
     test("servizio duplicato (maiuscole diverse) viene unito in una sola voce", () => {
@@ -128,6 +134,32 @@ describe("merge", () => {
             expect(servizio.nome).toBe("Reception");
             expect(servizio.interno).toBe("0 / 1");
         }
+    });
+
+    test("il reparto della lista finisce nel servizio; senza reparto resta vuoto", () => {
+        const result = merge([], [
+            { contatto: "Portineria", interno: "5", reparto: "Logistica" },
+            { contatto: "Mensa", interno: "6" },
+        ]);
+        const reparti = result.map(e => e.tipo === "servizio" ? `${e.nome}:${e.reparto}` : "");
+        expect(reparti).toEqual(["Mensa:", "Portineria:Logistica"]);
+    });
+
+    test("servizio duplicato: si tiene il primo reparto non vuoto", () => {
+        const result = merge([], [
+            { contatto: "Reception", interno: "0", reparto: "" },
+            { contatto: "reception", interno: "1", reparto: " Direzione " },
+            { contatto: "RECEPTION", interno: "2", reparto: "Altro" },
+        ]);
+        expect(result).toHaveLength(1);
+        const s = result[0];
+        if (s.tipo === "servizio") expect(s.reparto).toBe("Direzione");
+    });
+
+    test("il reparto di una voce abbinata a un utente non crea né modifica nulla", () => {
+        const result = merge([userConInterno], [{ contatto: "mario.rossi@coind.it", interno: "101", reparto: "Qualità" }]);
+        expect(result).toHaveLength(1);
+        expect(result[0].tipo).toBe("utente");
     });
 
     test("voce con una mail senza utente in Graph diventa un servizio", () => {
@@ -163,9 +195,9 @@ describe("filtra", () => {
         expect(result[0].tipo).toBe("utente");
     });
 
-    test("match su officeLocation (reparto e ruolo insieme)", () => {
+    test("match su jobTitle", () => {
         const result = filtra("qualità", rubrica);
-        expect(result.some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
+        expect(result.some(e => e.tipo === "utente" && e.user.jobTitle === "Qualità - Responsabile")).toBe(true);
     });
 
     test("match su interno", () => {
@@ -183,8 +215,8 @@ describe("filtra", () => {
     });
 
     test("la ricerca ignora gli accenti", () => {
-        expect(filtra("qualita", rubrica).some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
-        expect(filtra("QUALITÀ", rubrica).some(e => e.tipo === "utente" && e.user.officeLocation === "Qualità - Responsabile")).toBe(true);
+        expect(filtra("qualita", rubrica).some(e => e.tipo === "utente" && e.user.jobTitle === "Qualità - Responsabile")).toBe(true);
+        expect(filtra("QUALITÀ", rubrica).some(e => e.tipo === "utente" && e.user.jobTitle === "Qualità - Responsabile")).toBe(true);
     });
 
     test("più parole in ordine diverso trovano lo stesso utente", () => {
@@ -238,9 +270,9 @@ describe("filtra", () => {
 // esterni
 // ============================================================
 describe("merge con esterni", () => {
-    const esterni: IContattoInterno[] = [
-        { contatto: "Idraulico Verdi", interno: "300" },
-        { contatto: "Taxi Navile", interno: "301" },
+    const esterni: IContattoEsterno[] = [
+        { nome: "Idraulico Verdi", numero: "051 111111", numeroBreve: "300" },
+        { nome: "Taxi Navile", numero: "051 222222", numeroBreve: "301" },
     ];
 
     test("le voci della lista esterni diventano IRubricaEsterno", () => {
@@ -249,41 +281,64 @@ describe("merge con esterni", () => {
         expect(result.every(e => e.tipo === "esterno")).toBe(true);
     });
 
+    test("numero e numero breve restano distinti", () => {
+        const e = merge([], [], esterni)[0];
+        expect(e.tipo).toBe("esterno");
+        if (e.tipo === "esterno") {
+            expect(e.nome).toBe("Idraulico Verdi");
+            expect(e.numero).toBe("051 111111");
+            expect(e.numeroBreve).toBe("300");
+        }
+    });
+
     test("senza il terzo parametro il comportamento resta quello di prima", () => {
         expect(merge([userConInterno], vociLista).some(e => e.tipo === "esterno")).toBe(false);
     });
 
     test("un esterno non viene mai abbinato a un utente Graph, nemmeno con la stessa mail", () => {
-        const result = merge([userConInterno], [], [{ contatto: "mario.rossi@coind.it", interno: "999" }]);
+        const result = merge([userConInterno], [], [{ nome: "mario.rossi@coind.it", numero: "999", numeroBreve: "998" }]);
         const utente = result.find(e => e.tipo === "utente");
-        expect(utente?.interno).toBeNull();
+        expect(internoDi(utente)).toBeNull();
         expect(result.filter(e => e.tipo === "esterno")).toHaveLength(1);
     });
 
-    test("esterno duplicato (maiuscole diverse) viene unito e gli interni sono tutti mostrati", () => {
+    test("esterno duplicato (maiuscole diverse) viene unito e tutti i numeri sono mostrati", () => {
         const result = merge([], [], [
-            { contatto: "Taxi Navile", interno: "301" },
-            { contatto: "taxi navile", interno: "302" },
-            { contatto: "TAXI NAVILE", interno: "301" },
+            { nome: "Taxi Navile", numero: "051 1", numeroBreve: "301" },
+            { nome: "taxi navile", numero: "051 2", numeroBreve: "302" },
+            { nome: "TAXI NAVILE", numero: "051 1", numeroBreve: "301" },
         ]);
         expect(result).toHaveLength(1);
         const e = result[0];
         if (e.tipo === "esterno") {
             expect(e.nome).toBe("Taxi Navile");
-            expect(e.interno).toBe("301 / 302");
+            expect(e.numeroBreve).toBe("301 / 302");
+            expect(e.numero).toBe("051 1 / 051 2");
         }
+    });
+
+    test("basta uno dei due numeri: l'altro resta vuoto", () => {
+        const result = merge([], [], [
+            { nome: "Solo breve", numero: "", numeroBreve: "310" },
+            { nome: "Solo numero", numero: "051 3", numeroBreve: "  " },
+        ]);
+        expect(result).toHaveLength(2);
+        const [breve, numero] = result.map(e => e.tipo === "esterno" ? [e.numero, e.numeroBreve] : []);
+        expect(breve).toEqual(["", "310"]);
+        expect(numero).toEqual(["051 3", ""]);
     });
 
     test("righe incomplete della lista esterni vengono ignorate", () => {
         const result = merge([], [], [
-            { contatto: " ", interno: "1" },
-            { contatto: "Corriere", interno: "" },
+            { nome: " ", numero: "051 1", numeroBreve: "1" },
+            { nome: "Corriere", numero: "", numeroBreve: "" },
+            { nome: "Corriere", numero: "  ", numeroBreve: " " },
         ]);
         expect(result).toHaveLength(0);
     });
 
     test("stesso nome in servizi ed esterni: restano due voci distinte", () => {
-        const result = merge([], [{ contatto: "Reception", interno: "0" }], [{ contatto: "Reception", interno: "9" }]);
+        const result = merge([], [{ contatto: "Reception", interno: "0" }], [{ nome: "Reception", numero: "", numeroBreve: "9" }]);
         expect(result.map(e => e.tipo).sort()).toEqual(["esterno", "servizio"]);
     });
 });
@@ -292,7 +347,10 @@ describe("filtra con esterni", () => {
     const rubrica = merge(
         [userConInterno],
         [{ contatto: "Portineria", interno: "5" }],
-        [{ contatto: "Idraulico Verdi", interno: "300" }, { contatto: "Taxi Navile", interno: "301" }]
+        [
+            { nome: "Idraulico Verdi", numero: "+39 051 1234567", numeroBreve: "300" },
+            { nome: "Taxi Navile", numero: "051 7654321", numeroBreve: "301" },
+        ]
     );
 
     test("ricerca per nome sugli esterni", () => {
@@ -301,8 +359,28 @@ describe("filtra con esterni", () => {
         expect(result[0].tipo).toBe("esterno");
     });
 
-    test("ricerca per interno sugli esterni", () => {
-        expect(filtra("301", rubrica)).toHaveLength(1);
+    test("ricerca per numero breve sugli esterni", () => {
+        const result = filtra("301", rubrica);
+        expect(result).toHaveLength(1);
+        expect(result[0].tipo === "esterno" && result[0].nome).toBe("Taxi Navile");
+    });
+
+    test("ricerca per numero intero sugli esterni, anche con spazi e prefisso", () => {
+        expect(filtra("1234567", rubrica)).toHaveLength(1);
+        expect(filtra("051 1234567", rubrica)).toHaveLength(1);
+        expect(filtra("+39 051 1234567", rubrica)).toHaveLength(1);
+        expect(filtra("0517654321", rubrica)).toHaveLength(1);
+        expect(filtra("051 765", rubrica)).toHaveLength(1);
+    });
+
+    test("poche cifre non cercano nei numeri interi (altrimenti '123' troverebbe chiunque)", () => {
+        expect(filtra("123", rubrica)).toHaveLength(0);
+        expect(filtra("051", rubrica)).toHaveLength(0);
+    });
+
+    test("nome e numero intero si combinano", () => {
+        expect(filtra("taxi 7654321", rubrica)).toHaveLength(1);
+        expect(filtra("idraulico 7654321", rubrica)).toHaveLength(0);
     });
 
     test("la parola 'esterno' (o 'esterni') trova tutti gli esterni e solo quelli", () => {
@@ -324,6 +402,45 @@ describe("filtra con esterni", () => {
     });
 });
 
+describe("filtra: reparto dei servizi e numeri dei cellulari", () => {
+    const carla: UtenteGraph = {
+        id: "c", displayName: "Carla Neri", mail: "carla.neri@coind.it",
+        mobilePhone: "+39 333 1234567", faxNumber: "512",
+    };
+    const rubrica = merge(
+        [carla],
+        [{ contatto: "Portineria", interno: "5", reparto: "Logistica" }]
+    );
+
+    test("il reparto dei servizi è ricercabile", () => {
+        const result = filtra("logistica", rubrica);
+        expect(result).toHaveLength(1);
+        expect(result[0].tipo).toBe("servizio");
+    });
+
+    test("il numero breve del cellulare (faxNumber) è ricercabile", () => {
+        expect(filtra("512", rubrica)).toHaveLength(1);
+    });
+
+    test("il cellulare intero è ricercabile in vari formati", () => {
+        expect(filtra("3331234567", rubrica)).toHaveLength(1);
+        expect(filtra("333 1234567", rubrica)).toHaveLength(1);
+        expect(filtra("+39 333 1234567", rubrica)).toHaveLength(1);
+        expect(filtra("1234", rubrica)).toHaveLength(1);
+        expect(filtra("carla 1234", rubrica)).toHaveLength(1);
+    });
+
+    test("poche cifre non trovano nel cellulare intero", () => {
+        expect(filtra("123", rubrica)).toHaveLength(0);
+        expect(filtra("333", rubrica)).toHaveLength(0);
+    });
+
+    test("cifre che non corrispondono non trovano nulla", () => {
+        expect(filtra("9999", rubrica)).toHaveLength(0);
+        expect(filtra("carla 9999", rubrica)).toHaveLength(0);
+    });
+});
+
 // ============================================================
 // ordinamento
 // ============================================================
@@ -332,7 +449,7 @@ describe("ordinamento", () => {
         const result = merge(
             [{ displayName: "Zeno Zanni", mail: "zeno@coind.it" }, { displayName: "Anna Bianchi", mail: "anna@coind.it" }],
             [{ contatto: "Magazzino", interno: "6" }],
-            [{ contatto: "Corriere", interno: "7" }]
+            [{ nome: "Corriere", numero: "", numeroBreve: "7" }]
         );
         const nomi = result.map(e => e.tipo === "utente" ? e.user.displayName : e.nome);
         expect(nomi).toEqual(["Anna Bianchi", "Corriere", "Magazzino", "Zeno Zanni"]);
@@ -370,10 +487,10 @@ describe("applicaVista", () => {
     const rubrica = merge(
         [userConInterno, ospite, sala],
         [{ contatto: "gianni@esterno.com", interno: "77" }],
-        [{ contatto: "Idraulico", interno: "300" }]
+        [{ nome: "Idraulico", numero: "051 1", numeroBreve: "300" }]
     );
 
-    const tutto = { soloMembri: false, nascondiSenzaMail: false, includiEsterni: true };
+    const tutto = { soloMembri: false, nascondiSenzaMail: false, nascondiSenzaTelefono: false, includiEsterni: true };
 
     test("senza filtri non toglie nulla", () => {
         expect(applicaVista(rubrica, tutto)).toHaveLength(rubrica.length);
@@ -410,8 +527,66 @@ describe("applicaVista", () => {
     });
 
     test("i filtri sugli utenti non toccano servizi ed esterni", () => {
-        const r = merge([], [{ contatto: "Portineria", interno: "5" }], [{ contatto: "Taxi", interno: "6" }]);
-        expect(applicaVista(r, { soloMembri: true, nascondiSenzaMail: true, includiEsterni: true })).toHaveLength(2);
+        const r = merge([], [{ contatto: "Portineria", interno: "5" }], [{ nome: "Taxi", numero: "", numeroBreve: "6" }]);
+        expect(applicaVista(r, { soloMembri: true, nascondiSenzaMail: true, nascondiSenzaTelefono: true, includiEsterni: true })).toHaveLength(2);
+    });
+});
+
+// ============================================================
+// utenti senza telefono
+// ============================================================
+describe("nascondiSenzaTelefono", () => {
+    const senzaNumeri: UtenteGraph = { id: "n1", displayName: "Senza Numeri", mail: "senza@coind.it" };
+    const telefonoCorto: UtenteGraph = { id: "n2", displayName: "Telefono Corto", mail: "corto@coind.it", businessPhones: ["12"] };
+    const soloFisso: UtenteGraph = { id: "n3", displayName: "Solo Fisso", mail: "fisso@coind.it", businessPhones: ["+39 051 6543123"] };
+    const soloCell: UtenteGraph = { id: "n4", displayName: "Solo Cell", mail: "cell@coind.it", mobilePhone: "+39 333 1234567" };
+    const soloBreve: UtenteGraph = { id: "n5", displayName: "Solo Breve", mail: "breve@coind.it", faxNumber: "512" };
+    const spazi: UtenteGraph = { id: "n6", displayName: "Solo Spazi", mail: "spazi@coind.it", mobilePhone: "  ", faxNumber: "" };
+    const conVoce: UtenteGraph = { id: "n7", displayName: "Con Voce", mail: "voce@coind.it" };
+
+    const rubrica = merge(
+        [senzaNumeri, telefonoCorto, soloFisso, soloCell, soloBreve, spazi, conVoce],
+        [{ contatto: "voce@coind.it", interno: "77" }, { contatto: "Portineria", interno: "5" }],
+        [{ nome: "Taxi", numero: "", numeroBreve: "6" }]
+    );
+    const opz = { soloMembri: false, nascondiSenzaMail: false, nascondiSenzaTelefono: true, includiEsterni: true };
+    const nomi = (r: IRubricaEntry[]) => r.map(e => e.tipo === "utente" ? e.user.displayName : e.nome);
+
+    test("con l'opzione attiva nasconde solo gli utenti senza nessun numero", () => {
+        expect(nomi(applicaVista(rubrica, opz))).toEqual(
+            ["Con Voce", "Portineria", "Solo Breve", "Solo Cell", "Solo Fisso", "Taxi"]
+        );
+    });
+
+    test("con l'opzione spenta non nasconde nulla", () => {
+        expect(applicaVista(rubrica, { ...opz, nascondiSenzaTelefono: false })).toHaveLength(rubrica.length);
+    });
+
+    test("un interno preso dalla lista conta come numero", () => {
+        expect(nomi(applicaVista(rubrica, opz))).toContain("Con Voce");
+    });
+
+    test("un telefono fisso troppo corto (nessun interno ricavabile) non conta", () => {
+        expect(nomi(applicaVista(rubrica, opz))).not.toContain("Telefono Corto");
+    });
+
+    test("cellulare e numero breve fatti solo di spazi non contano", () => {
+        expect(nomi(applicaVista(rubrica, opz))).not.toContain("Solo Spazi");
+    });
+
+    test("servizi ed esterni non sono toccati", () => {
+        const r = applicaVista(rubrica, opz);
+        expect(r.some(e => e.tipo === "servizio")).toBe(true);
+        expect(r.some(e => e.tipo === "esterno")).toBe(true);
+    });
+
+    test("haTelefono guarda interno, cellulare e numero breve", () => {
+        const u = (user: UtenteGraph, interno: string | null = null) => ({ tipo: "utente" as const, user, interno });
+        expect(haTelefono(u(senzaNumeri))).toBe(false);
+        expect(haTelefono(u(senzaNumeri, "101"))).toBe(true);
+        expect(haTelefono(u(soloCell))).toBe(true);
+        expect(haTelefono(u(soloBreve))).toBe(true);
+        expect(haTelefono(u(senzaNumeri, "  "))).toBe(false);
     });
 });
 
@@ -498,6 +673,11 @@ describe("risolviProprieta", () => {
         expect(r.mostraMail).toBe(PROPRIETA_DEFAULT.mostraMail);
     });
 
+    test("nascondiSenzaTelefono è attivo di default, ma un valore salvato false resta false", () => {
+        expect(risolviProprieta({}).nascondiSenzaTelefono).toBe(true);
+        expect(risolviProprieta({ nascondiSenzaTelefono: false }).nascondiSenzaTelefono).toBe(false);
+    });
+
     test("non modifica l'oggetto dei default", () => {
         risolviProprieta({ risultatiPerPagina: 99 });
         expect(PROPRIETA_DEFAULT.risultatiPerPagina).toBe(30);
@@ -542,26 +722,129 @@ describe("merge con numero breve", () => {
 
     test("l'utente senza voce in lista usa il numero breve del telefono", () => {
         const result = merge([conTelefono], []);
-        expect(result[0].interno).toBe("456");
+        expect(internoDi(result[0])).toBe("456");
     });
 
     test("una voce in lista con la sua mail sostituisce il numero breve", () => {
         const result = merge([conTelefono], [{ contatto: "luca.verdi@coind.it", interno: "900" }]);
-        expect(result[0].interno).toBe("900");
+        expect(internoDi(result[0])).toBe("900");
     });
 
     test("si usa solo il primo numero di businessPhones", () => {
         const result = merge([{ ...conTelefono, businessPhones: ["+39 051 6543111", "+39 051 6543222"] }], []);
-        expect(result[0].interno).toBe("111");
+        expect(internoDi(result[0])).toBe("111");
     });
 
     test("senza telefono (array vuoto o assente) l'interno resta null", () => {
-        expect(merge([{ ...conTelefono, businessPhones: [] }], [])[0].interno).toBeNull();
-        expect(merge([{ ...conTelefono, businessPhones: undefined }], [])[0].interno).toBeNull();
+        expect(internoDi(merge([{ ...conTelefono, businessPhones: [] }], [])[0])).toBeNull();
+        expect(internoDi(merge([{ ...conTelefono, businessPhones: undefined }], [])[0])).toBeNull();
     });
 
     test("la ricerca trova l'utente dal numero breve", () => {
         const rubrica = merge([conTelefono], []);
         expect(filtra("456", rubrica)).toHaveLength(1);
+    });
+});
+
+
+// ============================================================
+// numeri brevi liberi (ricerca di un numero non assegnato)
+// ============================================================
+describe("descrizioneUtente", () => {
+    test("reparto e job title separati da un trattino, prima il reparto", () => {
+        expect(descrizioneUtente({ department: "IT", jobTitle: "Sistemista" })).toBe("IT - Sistemista");
+    });
+
+    test("se ne manca uno si mostra solo l'altro, senza trattini in più", () => {
+        expect(descrizioneUtente({ department: "IT" })).toBe("IT");
+        expect(descrizioneUtente({ jobTitle: " Sistemista " })).toBe("Sistemista");
+        expect(descrizioneUtente({ department: "  ", jobTitle: null })).toBe("");
+        expect(descrizioneUtente({})).toBe("");
+    });
+
+    test("la ricerca trova sia per reparto sia per job title", () => {
+        const r = merge([{ id: "x", displayName: "Eva Rossi", mail: "eva@coind.it", department: "Logistica", jobTitle: "Spedizioniere" }], []);
+        expect(filtra("logistica", r)).toHaveLength(1);
+        expect(filtra("spedizioniere", r)).toHaveLength(1);
+        expect(filtra("logistica spedizioniere", r)).toHaveLength(1);
+    });
+});
+
+describe("dividiNumeri", () => {
+    test("separa i numeri uniti con ' / ' e scarta i vuoti", () => {
+        expect(dividiNumeri("101 / 102")).toEqual(["101", "102"]);
+        expect(dividiNumeri("101")).toEqual(["101"]);
+        expect(dividiNumeri("")).toEqual([]);
+        expect(dividiNumeri(undefined)).toEqual([]);
+    });
+
+    test("una barra senza spazi fa parte del numero", () => {
+        expect(dividiNumeri("051/123456")).toEqual(["051/123456"]);
+    });
+});
+
+describe("numeroBreveNonAssegnato", () => {
+    const ugo: UtenteGraph = {
+        id: "u", displayName: "Ugo Verdi", mail: "ugo@coind.it",
+        businessPhones: ["+39 051 6543123"], faxNumber: "200",
+    };
+    const rubrica = merge(
+        [ugo],
+        [{ contatto: "Portineria", interno: "150" }],
+        [
+            { nome: "Primo", numero: "", numeroBreve: "100" },
+            { nome: "Secondo", numero: "051 2", numeroBreve: "301 / 302" },
+            { nome: "Ultimo", numero: "", numeroBreve: "551" },
+            { nome: "Senza breve", numero: "051 3", numeroBreve: "" },
+        ]
+    );
+
+    test("l'intervallo si ricava dai numeri brevi degli esterni", () => {
+        expect(intervalloNumeriBreviEsterni(rubrica)).toEqual({ min: 100, max: 551 });
+    });
+
+    test("l'intervallo è dinamico: segue i dati", () => {
+        const r = merge([], [], [
+            { nome: "A", numero: "", numeroBreve: "10" },
+            { nome: "B", numero: "", numeroBreve: "20" },
+        ]);
+        expect(intervalloNumeriBreviEsterni(r)).toEqual({ min: 10, max: 20 });
+        expect(numeroBreveNonAssegnato("15", r)).toEqual({ numero: "15", min: 10, max: 20 });
+        expect(numeroBreveNonAssegnato("21", r)).toBeNull();
+    });
+
+    test("un numero dentro l'intervallo e senza nessuna voce è segnalato", () => {
+        expect(numeroBreveNonAssegnato("250", rubrica)).toEqual({ numero: "250", min: 100, max: 551 });
+        expect(numeroBreveNonAssegnato("  250 ", rubrica)).toEqual({ numero: "250", min: 100, max: 551 });
+    });
+
+    test("estremi dell'intervallo: assegnati (esterni) quindi non segnalati", () => {
+        expect(numeroBreveNonAssegnato("100", rubrica)).toBeNull();
+        expect(numeroBreveNonAssegnato("551", rubrica)).toBeNull();
+    });
+
+    test("un numero assegnato a qualunque voce non è segnalato", () => {
+        expect(numeroBreveNonAssegnato("302", rubrica)).toBeNull(); // secondo numero di un esterno
+        expect(numeroBreveNonAssegnato("123", rubrica)).toBeNull(); // interno ricavato dal telefono dell'utente
+        expect(numeroBreveNonAssegnato("200", rubrica)).toBeNull(); // numero breve del cellulare (faxNumber)
+        expect(numeroBreveNonAssegnato("150", rubrica)).toBeNull(); // interno di un servizio
+    });
+
+    test("fuori dall'intervallo non è segnalato", () => {
+        expect(numeroBreveNonAssegnato("99", rubrica)).toBeNull();
+        expect(numeroBreveNonAssegnato("552", rubrica)).toBeNull();
+    });
+
+    test("testo o numeri con separatori non sono numeri brevi", () => {
+        expect(numeroBreveNonAssegnato("abc", rubrica)).toBeNull();
+        expect(numeroBreveNonAssegnato("2 50", rubrica)).toBeNull();
+        expect(numeroBreveNonAssegnato("+250", rubrica)).toBeNull();
+        expect(numeroBreveNonAssegnato("", rubrica)).toBeNull();
+    });
+
+    test("senza esterni con numero breve non c'è nessun intervallo", () => {
+        expect(intervalloNumeriBreviEsterni(merge([ugo], []))).toBeNull();
+        expect(numeroBreveNonAssegnato("250", merge([ugo], []))).toBeNull();
+        expect(numeroBreveNonAssegnato("250", merge([], [], [{ nome: "X", numero: "051 1", numeroBreve: "" }]))).toBeNull();
     });
 });
