@@ -75,6 +75,7 @@ export interface IRubricaWebPartProps {
   mostraReparto: boolean;     // job title degli utenti / reparto dei servizi
   mostraCellulare: boolean;   // cellulare aziendale + numero breve
   linkCliccabili: boolean;    // tel e chat Teams
+  abilitaTabelle: boolean;    // true = mostra la vista a tabelle (con stampa ed esportazione CSV)
 
   // Sviluppo/test
   usaDatiMock: boolean;

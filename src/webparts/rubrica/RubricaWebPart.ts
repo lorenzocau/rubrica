@@ -140,7 +140,12 @@ export default class RubricaWebPart extends BaseClientSideWebPart<IRubricaWebPar
                 PropertyPaneToggle("mostraPresenza", { label: "Indicatore di presenza" }),
                 PropertyPaneToggle("mostraReparto", { label: "Reparto e job title degli utenti / reparto dei servizi" }),
                 PropertyPaneToggle("mostraCellulare", { label: "Cellulare aziendale e numero breve" }),
-                PropertyPaneToggle("linkCliccabili", { label: "Link su mail, telefono e chat Teams" })
+                PropertyPaneToggle("linkCliccabili", { label: "Link su mail, telefono e chat Teams" }),
+                PropertyPaneToggle("abilitaTabelle", {
+                  label: "Vista a tabelle (stampa ed esportazione CSV)",
+                  onText: "Disponibile",
+                  offText: "Nascosta"
+                })
               ]
             },
             {

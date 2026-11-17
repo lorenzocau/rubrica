@@ -6,12 +6,14 @@ import { Text } from "@fluentui/react/lib/Text";
 import { Checkbox } from "@fluentui/react/lib/Checkbox";
 import { Spinner, SpinnerSize } from "@fluentui/react/lib/Spinner";
 import { MessageBar, MessageBarType } from "@fluentui/react/lib/MessageBar";
+import { Pivot, PivotItem } from "@fluentui/react/lib/Pivot";
 
 // dati reali (i dati mock vengono caricati a richiesta, vedi getSorgenti)
 import { getGraphUsers } from "../services/graphService";
 import { getVociEsterni, getVociLista } from "../services/spService";
 import { IContattoEsterno, IContattoInterno, IRubricaEntry, IRubricaWebPartProps, UtenteGraph } from "../types";
 import PersonCard from "./PersonCard";
+import VistaTabelle from "./VistaTabelle";
 import { applicaVista, filtra, merge, normalizzaPageSize, numeroBreveNonAssegnato, risolviNomeLista } from "../rubricaLogic";
 import { PROPRIETA_DEFAULT } from "../proprieta";
 import { AVVISO_GRAPH_VUOTO, COLONNE_LISTA_DEFAULT, erroreGraph, erroreImprevisto, erroreLista } from "../errori";
@@ -74,10 +76,13 @@ function Rubrica(props: IRubricaWebPartProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [avvisi, setAvvisi] = useState<string[]>([]);
   const [pagina, setPagina] = useState<number>(0);
+  const [vista, setVista] = useState<"schede" | "tabelle">("schede");
 
   const listaServizi = risolviNomeLista(props.listaServizi, PROPRIETA_DEFAULT.listaServizi);
   const listaEsterni = risolviNomeLista(props.listaEsterni, PROPRIETA_DEFAULT.listaEsterni);
   const pageSize = normalizzaPageSize(props.risultatiPerPagina);
+  // se la vista a tabelle viene disattivata dalle impostazioni si torna alle schede
+  const tabelleAttive = props.abilitaTabelle && vista === "tabelle";
 
   // Ricarica i dati solo se cambia qualcosa che riguarda DA DOVE si leggono.
   // I filtri sugli utenti e le opzioni di visualizzazione non richiedono nuove chiamate.
@@ -206,8 +211,21 @@ function Rubrica(props: IRubricaWebPartProps) {
         <Text as="h2" variant="xLarge" block style={{ marginBottom: 8 }}>{props.titolo}</Text>
       )}
 
+      {props.abilitaTabelle && (
+        <Pivot
+          aria-label="Tipo di visualizzazione"
+          headersOnly
+          selectedKey={vista}
+          onLinkClick={item => setVista(item?.props.itemKey === "tabelle" ? "tabelle" : "schede")}
+          styles={{ root: { marginBottom: 8 } }}
+        >
+          <PivotItem headerText="Schede" itemKey="schede" />
+          <PivotItem headerText="Tabelle" itemKey="tabelle" />
+        </Pivot>
+      )}
+
       {/* ── Contatore caricati ── */}
-      {props.mostraContatore && (
+      {props.mostraContatore && !tabelleAttive && (
         <Text variant="small" style={{ color: "#605e5c", display: "block", marginBottom: 8 }}>
           Rubrica: <strong>{utenti}</strong> utenti · <strong>{servizi}</strong> servizi
           {esterniDisponibili && includiEsterni && <> · <strong>{esterni}</strong> esterni</>}
@@ -222,55 +240,70 @@ function Rubrica(props: IRubricaWebPartProps) {
         onClear={() => setRicerca("")}
       />
 
-      {esterniDisponibili && (
-        <Checkbox
-          label="Includi contatti esterni"
-          checked={includiEsterni}
-          onChange={(_e, checked) => setIncludiEsterni(!!checked)}
-          styles={{ root: { margin: "8px 0" } }}
+      {tabelleAttive && (
+        <VistaTabelle
+          rubrica={rubricaCompleta}
+          ricerca={ricerca}
+          titolo={props.titolo}
+          esterniDisponibili={esterniDisponibili}
+          mostraCellulare={props.mostraCellulare}
+          mostraReparto={props.mostraReparto}
         />
       )}
 
-      {/* ── Contatore risultati + pagina ── */}
-      {(ricercaPulita !== "" || mostraTutto) && filtrati.length > 0 && (
-        <Text variant="small" style={{ color: "#605e5c", display: "block", margin: "6px 0" }}>
-          {filtrati.length} risultat{filtrati.length === 1 ? "o" : "i"}
-          {totPagine > 1 && ` — pagina ${paginaCorr + 1} di ${totPagine}`}
-        </Text>
-      )}
+      {!tabelleAttive && (
+        <>
+          {esterniDisponibili && (
+            <Checkbox
+              label="Includi contatti esterni"
+              checked={includiEsterni}
+              onChange={(_e, checked) => setIncludiEsterni(!!checked)}
+              styles={{ root: { margin: "8px 0" } }}
+            />
+          )}
 
-      {/* ── Messaggi di stato ── */}
-      {!mostraTutto && ricercaPulita === "" && (
-        <Text variant="small" style={{ color: "#605e5c", display: "block", margin: "12px 0" }}>
-          Scrivi nel campo di ricerca per trovare un contatto.
-        </Text>
-      )}
-      {numeroLibero && (
-        <MessageBar messageBarType={MessageBarType.info}>
-          Il numero breve <strong>{numeroLibero.numero}</strong> rientra nell’intervallo dei numeri
-          brevi degli esterni ({numeroLibero.min}–{numeroLibero.max}) ma non è associato a nessun contatto.
-        </MessageBar>
-      )}
-      {filtrati.length === 0 && !numeroLibero && (ricercaPulita !== "" || mostraTutto) && (
-        <Text variant="medium" style={{ color: "#605e5c", display: "block", margin: "12px 0" }}>
-          {mostraTutto ? "Nessun contatto disponibile." : `Nessun risultato per “${ricercaPulita}”.`}
-        </Text>
-      )}
+          {/* ── Contatore risultati + pagina ── */}
+          {(ricercaPulita !== "" || mostraTutto) && filtrati.length > 0 && (
+            <Text variant="small" style={{ color: "#605e5c", display: "block", margin: "6px 0" }}>
+              {filtrati.length} risultat{filtrati.length === 1 ? "o" : "i"}
+              {totPagine > 1 && ` — pagina ${paginaCorr + 1} di ${totPagine}`}
+            </Text>
+          )}
 
-      {paginaVisibile.map((entry, i) => <PersonCard key={i} entry={entry} opzioni={props} />)}
+          {/* ── Messaggi di stato ── */}
+          {!mostraTutto && ricercaPulita === "" && (
+            <Text variant="small" style={{ color: "#605e5c", display: "block", margin: "12px 0" }}>
+              Scrivi nel campo di ricerca per trovare un contatto.
+            </Text>
+          )}
+          {numeroLibero && (
+            <MessageBar messageBarType={MessageBarType.info}>
+              Il numero breve <strong>{numeroLibero.numero}</strong> rientra nell’intervallo dei numeri
+              brevi degli esterni ({numeroLibero.min}–{numeroLibero.max}) ma non è associato a nessun contatto.
+            </MessageBar>
+          )}
+          {filtrati.length === 0 && !numeroLibero && (ricercaPulita !== "" || mostraTutto) && (
+            <Text variant="medium" style={{ color: "#605e5c", display: "block", margin: "12px 0" }}>
+              {mostraTutto ? "Nessun contatto disponibile." : `Nessun risultato per “${ricercaPulita}”.`}
+            </Text>
+          )}
 
-      {/* ── Paginazione ── */}
-      {totPagine > 1 && (
-        <div style={{ display: "flex", gap: 8, padding: "12px 0", justifyContent: "center" }}>
-          <DefaultButton
-            disabled={paginaCorr === 0}
-            onClick={() => setPagina(paginaCorr - 1)}
-          >← Precedente</DefaultButton>
-          <DefaultButton
-            disabled={paginaCorr >= totPagine - 1}
-            onClick={() => setPagina(paginaCorr + 1)}
-          >Successiva →</DefaultButton>
-        </div>
+          {paginaVisibile.map((entry, i) => <PersonCard key={i} entry={entry} opzioni={props} />)}
+
+          {/* ── Paginazione ── */}
+          {totPagine > 1 && (
+            <div style={{ display: "flex", gap: 8, padding: "12px 0", justifyContent: "center" }}>
+              <DefaultButton
+                disabled={paginaCorr === 0}
+                onClick={() => setPagina(paginaCorr - 1)}
+              >← Precedente</DefaultButton>
+              <DefaultButton
+                disabled={paginaCorr >= totPagine - 1}
+                onClick={() => setPagina(paginaCorr + 1)}
+              >Successiva →</DefaultButton>
+            </div>
+          )}
+        </>
       )}
     </>
   );

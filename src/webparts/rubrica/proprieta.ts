@@ -23,6 +23,7 @@ export const PROPRIETA_DEFAULT: IRubricaWebPartProps = {
   mostraReparto: true,
   mostraCellulare: true,
   linkCliccabili: true,
+  abilitaTabelle: true,
 
   usaDatiMock: false,
 };

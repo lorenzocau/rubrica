@@ -39,6 +39,7 @@
       "mostraReparto": true,
       "mostraCellulare": true,
       "linkCliccabili": true,
+      "abilitaTabelle": true,
       "usaDatiMock": false
     }
   }]

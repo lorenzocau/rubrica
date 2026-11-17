@@ -216,6 +216,8 @@ function generaUtenti(): UtenteGraph[] {
         utenti.push({
             id,
             displayName: `${nome} ${cognome}`,
+            givenName: nome,
+            surname: cognome,
             mail,
             // come in AD: department e jobTitle, mostrati come "Reparto - Job title"
             department: reparto.dept,
@@ -351,9 +353,9 @@ _utenti.push(
 // Account con mail ma senza alcun numero: servono a provare "Nascondi gli utenti senza alcun numero".
 // Il terzo ha solo il numero breve del cellulare, quindi resta sempre visibile.
 _utenti.push(
-    { id: "mock-uid-notel-1", displayName: "Zeno Senzatelefono", mail: `zeno.senzatelefono@${CFG.DOMAIN}`, jobTitle: "Consulente", userType: "Member", accountEnabled: true } as UtenteGraph,
-    { id: "mock-uid-notel-2", displayName: "Zara Senzanumeri", mail: `zara.senzanumeri@${CFG.DOMAIN}`, jobTitle: "Stagista", businessPhones: [], userType: "Member", accountEnabled: true } as UtenteGraph,
-    { id: "mock-uid-breve-1", displayName: "Zoe Solobreve", mail: `zoe.solobreve@${CFG.DOMAIN}`, jobTitle: "Tecnico", faxNumber: "555", userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-notel-1", displayName: "Zeno Senzatelefono", givenName: "Zeno", surname: "Senzatelefono", mail: `zeno.senzatelefono@${CFG.DOMAIN}`, jobTitle: "Consulente", userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-notel-2", displayName: "Zara Senzanumeri", givenName: "Zara", surname: "Senzanumeri", mail: `zara.senzanumeri@${CFG.DOMAIN}`, jobTitle: "Stagista", businessPhones: [], userType: "Member", accountEnabled: true } as UtenteGraph,
+    { id: "mock-uid-breve-1", displayName: "Zoe Solobreve", givenName: "Zoe", surname: "Solobreve", mail: `zoe.solobreve@${CFG.DOMAIN}`, jobTitle: "Tecnico", faxNumber: "555", userType: "Member", accountEnabled: true } as UtenteGraph,
 );
 
 /** Simula getVociLista() sulla lista Esterni — aggiunge 250ms di latenza finta */

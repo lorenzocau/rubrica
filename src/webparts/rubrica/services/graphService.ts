@@ -4,7 +4,8 @@ import { leggiCache, scriviCache } from "./cache";
 
 // la versione nella chiave scarta le vecchie voci quando cambiano i campi letti
 // (v4: reparto (department) + jobTitle al posto di officeLocation, aggiunto faxNumber)
-const CACHE_CHIAVE = "graphUsers:v4";
+// (v5: aggiunti givenName e surname, per ordinare per cognome la vista a tabelle)
+const CACHE_CHIAVE = "graphUsers:v5";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minuti
 
 // Se Graph non è raggiungibile (o i permessi non sono approvati) la chiamata
@@ -22,7 +23,7 @@ export async function getGraphUsers(): Promise<UtenteGraph[]> {
     const graph = getGraph();
 
     const utenti: UtenteGraph[] = await graph.users
-        .select("mail", "id", "displayName", "department", "jobTitle", "mobilePhone", "faxNumber", "businessPhones", "userType")
+        .select("mail", "id", "displayName", "givenName", "surname", "department", "jobTitle", "mobilePhone", "faxNumber", "businessPhones", "userType")
         .filter("accountEnabled eq true")
         .top(999)();
 
