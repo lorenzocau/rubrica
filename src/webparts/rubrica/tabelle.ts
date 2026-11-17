@@ -171,8 +171,8 @@ export function campoCsv(valore: string, comeNumero: boolean): string {
     if (valore === "") return "";
 
     let v = valore;
-    if (comeNumero && /^[+0-9][0-9 ()./\-]*$/.test(v)) v = `="${v}"`;
-    else if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
+    if (comeNumero && /^[+0-9][0-9 ()./-]*$/.test(v)) v = `="${v}"`;
+    else if (/^[=+@\t\r-]/.test(v)) v = `'${v}`;
 
     return /[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
