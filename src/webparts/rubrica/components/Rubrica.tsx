@@ -13,14 +13,14 @@ import { getGraphUsers } from "../services/graphService";
 import { getVociEsterni, getVociLista } from "../services/spService";
 import { IContattoEsterno, IContattoInterno, IRubricaEntry, IRubricaWebPartProps, UtenteGraph } from "../types";
 import PersonCard from "./PersonCard";
-import VistaTabelle from "./VistaTabelle";
+import VistaElenco from "./VistaElenco";
 import { applicaVista, filtra, merge, normalizzaPageSize, numeroBreveNonAssegnato, risolviNomeLista } from "../rubricaLogic";
 import { PROPRIETA_DEFAULT } from "../proprieta";
 import { AVVISO_GRAPH_VUOTO, COLONNE_LISTA_DEFAULT, erroreGraph, erroreImprevisto, erroreLista } from "../errori";
 
 // colonne attese nelle liste, per il messaggio d'errore sulle colonne mancanti
 const COLONNE_SERVIZI = [...COLONNE_LISTA_DEFAULT, "Reparto"];
-const COLONNE_ESTERNI = ["Nome", "Numero", "Numero breve"];
+const COLONNE_ESTERNI = ["Title", "Numero", "Numero breve"];
 
 interface IEsito<T> {
   dati: T[];
@@ -76,13 +76,13 @@ function Rubrica(props: IRubricaWebPartProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [avvisi, setAvvisi] = useState<string[]>([]);
   const [pagina, setPagina] = useState<number>(0);
-  const [vista, setVista] = useState<"schede" | "tabelle">("schede");
+  const [vista, setVista] = useState<"ricerca" | "elenco">("ricerca");
 
   const listaServizi = risolviNomeLista(props.listaServizi, PROPRIETA_DEFAULT.listaServizi);
   const listaEsterni = risolviNomeLista(props.listaEsterni, PROPRIETA_DEFAULT.listaEsterni);
   const pageSize = normalizzaPageSize(props.risultatiPerPagina);
-  // se la vista a tabelle viene disattivata dalle impostazioni si torna alle schede
-  const tabelleAttive = props.abilitaTabelle && vista === "tabelle";
+  // se l'Elenco viene disattivato dalle impostazioni si torna alla Ricerca
+  const elencoAttivo = props.abilitaElenco && vista === "elenco";
 
   // Ricarica i dati solo se cambia qualcosa che riguarda DA DOVE si leggono.
   // I filtri sugli utenti e le opzioni di visualizzazione non richiedono nuove chiamate.
@@ -157,9 +157,10 @@ function Rubrica(props: IRubricaWebPartProps) {
       soloMembri: props.soloMembri,
       nascondiSenzaMail: props.nascondiSenzaMail,
       nascondiSenzaTelefono: props.nascondiSenzaTelefono,
+      nascondiSenzaInterno: props.nascondiSenzaInterno,
       includiEsterni: esterniDisponibili && includiEsterni,
     }),
-    [rubricaCompleta, props.soloMembri, props.nascondiSenzaMail, props.nascondiSenzaTelefono, esterniDisponibili, includiEsterni]
+    [rubricaCompleta, props.soloMembri, props.nascondiSenzaMail, props.nascondiSenzaTelefono, props.nascondiSenzaInterno, esterniDisponibili, includiEsterni]
   );
 
   const ricercaPulita = ricerca.trim();
@@ -211,21 +212,21 @@ function Rubrica(props: IRubricaWebPartProps) {
         <Text as="h2" variant="xLarge" block style={{ marginBottom: 8 }}>{props.titolo}</Text>
       )}
 
-      {props.abilitaTabelle && (
+      {props.abilitaElenco && (
         <Pivot
           aria-label="Tipo di visualizzazione"
           headersOnly
           selectedKey={vista}
-          onLinkClick={item => setVista(item?.props.itemKey === "tabelle" ? "tabelle" : "schede")}
+          onLinkClick={item => setVista(item?.props.itemKey === "elenco" ? "elenco" : "ricerca")}
           styles={{ root: { marginBottom: 8 } }}
         >
-          <PivotItem headerText="Schede" itemKey="schede" />
-          <PivotItem headerText="Tabelle" itemKey="tabelle" />
+          <PivotItem headerText="Ricerca" itemKey="ricerca" />
+          <PivotItem headerText="Elenco" itemKey="elenco" />
         </Pivot>
       )}
 
       {/* ── Contatore caricati ── */}
-      {props.mostraContatore && !tabelleAttive && (
+      {props.mostraContatore && !elencoAttivo && (
         <Text variant="small" style={{ color: "#605e5c", display: "block", marginBottom: 8 }}>
           Rubrica: <strong>{utenti}</strong> utenti · <strong>{servizi}</strong> servizi
           {esterniDisponibili && includiEsterni && <> · <strong>{esterni}</strong> esterni</>}
@@ -240,18 +241,19 @@ function Rubrica(props: IRubricaWebPartProps) {
         onClear={() => setRicerca("")}
       />
 
-      {tabelleAttive && (
-        <VistaTabelle
+      {elencoAttivo && (
+        <VistaElenco
           rubrica={rubricaCompleta}
           ricerca={ricerca}
           titolo={props.titolo}
           esterniDisponibili={esterniDisponibili}
           mostraCellulare={props.mostraCellulare}
           mostraReparto={props.mostraReparto}
+          nascondiSenzaInterno={props.nascondiSenzaInterno}
         />
       )}
 
-      {!tabelleAttive && (
+      {!elencoAttivo && (
         <>
           {esterniDisponibili && (
             <Checkbox

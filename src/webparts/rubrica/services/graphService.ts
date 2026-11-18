@@ -4,7 +4,7 @@ import { leggiCache, scriviCache } from "./cache";
 
 // la versione nella chiave scarta le vecchie voci quando cambiano i campi letti
 // (v4: reparto (department) + jobTitle al posto di officeLocation, aggiunto faxNumber)
-// (v5: aggiunti givenName e surname, per ordinare per cognome la vista a tabelle)
+// (v5: aggiunti givenName e surname, per ordinare per cognome l'Elenco)
 const CACHE_CHIAVE = "graphUsers:v5";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minuti
 

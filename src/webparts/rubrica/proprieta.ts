@@ -17,13 +17,14 @@ export const PROPRIETA_DEFAULT: IRubricaWebPartProps = {
   soloMembri: true,
   nascondiSenzaMail: true,
   nascondiSenzaTelefono: true,
+  nascondiSenzaInterno: false,
 
   mostraContatore: true,
   mostraPresenza: true,
   mostraReparto: true,
   mostraCellulare: true,
   linkCliccabili: true,
-  abilitaTabelle: true,
+  abilitaElenco: true,
 
   usaDatiMock: false,
 };

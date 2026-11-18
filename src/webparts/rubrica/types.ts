@@ -16,8 +16,8 @@ export interface IContattoInterno {
 
 // Riga della lista "Esterni" (fornitori, clienti, consulenti...)
 export interface IContattoEsterno {
-  nome: string;        // colonna "Nome"
-  numero: string;      // colonna "Numero": numero per intero ("" se assente)
+  nome: string;        // colonna "Title" (nome del fornitore)
+  numero: string;      // colonna "Numero": numero lungo ("" se assente)
   numeroBreve: string; // colonna "Numero breve" ("" se assente)
 }
 
@@ -68,6 +68,7 @@ export interface IRubricaWebPartProps {
   soloMembri: boolean;            // true = nasconde gli ospiti (userType Guest)
   nascondiSenzaMail: boolean;     // true = nasconde gli account senza mail
   nascondiSenzaTelefono: boolean; // true = nasconde gli utenti senza alcun numero (interno, cellulare, cellulare breve)
+  nascondiSenzaInterno: boolean;  // true = nasconde gli utenti senza numero interno breve (vale anche per l'Elenco)
 
   // Visualizzazione
   mostraContatore: boolean;
@@ -75,7 +76,7 @@ export interface IRubricaWebPartProps {
   mostraReparto: boolean;     // job title degli utenti / reparto dei servizi
   mostraCellulare: boolean;   // cellulare aziendale + numero breve
   linkCliccabili: boolean;    // tel e chat Teams
-  abilitaTabelle: boolean;    // true = mostra la vista a tabelle (con stampa ed esportazione CSV)
+  abilitaElenco: boolean;     // true = mostra la vista Elenco (con stampa ed esportazione CSV)
 
   // Sviluppo/test
   usaDatiMock: boolean;

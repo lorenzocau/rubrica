@@ -526,6 +526,22 @@ describe("applicaVista", () => {
         expect(result[0].tipo === "utente" && result[0].user.mail).toBe("mario.rossi@coind.it");
     });
 
+    test("nascondiSenzaInterno toglie gli utenti senza numero interno breve e non tocca il resto", () => {
+        const conTel: UtenteGraph = { id: "a", displayName: "Con Telefono", mail: "a@coind.it", businessPhones: ["+39 051 6543123"] };
+        const soloCell: UtenteGraph = { id: "b", displayName: "Solo Cell", mail: "b@coind.it", mobilePhone: "+39 333 1234567" };
+        const r = merge([conTel, soloCell], [{ contatto: "Portineria", interno: "5" }], [{ nome: "Taxi", numero: "", numeroBreve: "6" }]);
+        const nomi = (x: IRubricaEntry[]) => x.map(e => e.tipo === "utente" ? e.user.displayName : e.nome);
+        expect(nomi(applicaVista(r, { ...tutto, nascondiSenzaInterno: true }))).toEqual(["Con Telefono", "Portineria", "Taxi"]);
+        expect(nomi(applicaVista(r, { ...tutto, nascondiSenzaInterno: false }))).toHaveLength(4);
+        expect(nomi(applicaVista(r, tutto))).toHaveLength(4); // opzione assente = spenta
+    });
+
+    test("un interno preso dalla lista salva l'utente da nascondiSenzaInterno", () => {
+        const u: UtenteGraph = { id: "c", displayName: "Con Voce", mail: "voce@coind.it" };
+        const r = merge([u], [{ contatto: "voce@coind.it", interno: "77" }]);
+        expect(applicaVista(r, { ...tutto, nascondiSenzaInterno: true })).toHaveLength(1);
+    });
+
     test("i filtri sugli utenti non toccano servizi ed esterni", () => {
         const r = merge([], [{ contatto: "Portineria", interno: "5" }], [{ nome: "Taxi", numero: "", numeroBreve: "6" }]);
         expect(applicaVista(r, { soloMembri: true, nascondiSenzaMail: true, nascondiSenzaTelefono: true, includiEsterni: true })).toHaveLength(2);

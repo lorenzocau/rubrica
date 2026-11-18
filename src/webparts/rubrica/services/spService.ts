@@ -10,12 +10,13 @@ const COL_CONTATTO = "Contatto";// NON CAMBIARE DOPO LA CREAZIONE
 const COL_INTERNO = "NumeroInterno"; // NON CAMBIARE DOPO LA CREAZIONE
 const COL_REPARTO = "Reparto";
 
-// Lista contatti esterni ("Esterni").
-// Per "Nome" e "Numero" si accettano anche i vecchi nomi, così una lista Esterni
-// non ancora aggiornata continua a funzionare (senza numero breve).
-const COL_ESTERNO_NOME = ["Nome", "Contatto"];
-const COL_ESTERNO_NUMERO = ["Numero", "NumeroInterno"];
-const COL_ESTERNO_BREVE = ["Numero breve"];
+// Lista contatti esterni ("Esterni"): tre colonne, con questi nomi e nessun altro.
+//   Title        -> nome del fornitore (la colonna predefinita di ogni lista, anche se rinominata)
+//   Numero breve -> numero breve
+//   Numero       -> numero lungo (intero)
+const COL_ESTERNO_NOME = "Title";
+const COL_ESTERNO_NUMERO = "Numero";
+const COL_ESTERNO_BREVE = "Numero breve";
 
 // Il nome (o il percorso) delle liste ora arriva dalle impostazioni del web part.
 //   - "Rubrica"                        -> cercata per titolo nel sito corrente
@@ -90,24 +91,24 @@ export async function getVociLista(lista: string): Promise<IContattoInterno[]> {
     return voci;
 }
 
-// Lista Esterni: Nome + Numero (intero) + Numero breve.
+// Lista Esterni: Title (nome) + Numero (lungo) + Numero breve.
 export async function getVociEsterni(lista: string): Promise<IContattoEsterno[]> {
     const { righe, colonne } = await leggiRighe(lista, [
-        { chiave: "nome", candidati: COL_ESTERNO_NOME, obbligatoria: true },
-        { chiave: "numero", candidati: COL_ESTERNO_NUMERO, obbligatoria: false },
-        { chiave: "numeroBreve", candidati: COL_ESTERNO_BREVE, obbligatoria: false },
+        { chiave: "nome", candidati: [COL_ESTERNO_NOME], obbligatoria: true },
+        { chiave: "numero", candidati: [COL_ESTERNO_NUMERO], obbligatoria: false },
+        { chiave: "numeroBreve", candidati: [COL_ESTERNO_BREVE], obbligatoria: false },
     ]);
 
     // serve almeno una delle due colonne con i numeri
     if (!colonne.numero && !colonne.numeroBreve) {
         throw Object.assign(
             new Error("The field or property 'Numero' does not exist"),
-            { status: 400, colonneMancanti: [COL_ESTERNO_NUMERO[0], COL_ESTERNO_BREVE[0]] }
+            { status: 400, colonneMancanti: [COL_ESTERNO_NUMERO, COL_ESTERNO_BREVE] }
         );
     }
 
     if (!colonne.numeroBreve) {
-        console.warn(`[Rubrica] La lista "${lista}" non ha la colonna "${COL_ESTERNO_BREVE[0]}": i numeri brevi degli esterni non saranno disponibili.`);
+        console.warn(`[Rubrica] La lista "${lista}" non ha la colonna "${COL_ESTERNO_BREVE}": i numeri brevi degli esterni non saranno disponibili.`);
     }
 
     const voci: IContattoEsterno[] = [];

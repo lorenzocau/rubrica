@@ -194,6 +194,7 @@ export interface IOpzioniVista {
     soloMembri: boolean;            // nasconde gli ospiti (userType Guest)
     nascondiSenzaMail: boolean;     // nasconde gli account senza mail
     nascondiSenzaTelefono: boolean; // nasconde gli utenti senza alcun numero
+    nascondiSenzaInterno?: boolean; // nasconde gli utenti senza numero interno breve (assente = false)
     includiEsterni: boolean;        // checkbox "Esterni"
 }
 
@@ -207,6 +208,7 @@ export function applicaVista(rubrica: IRubricaEntry[], opz: IOpzioniVista): IRub
             if (opz.soloMembri && entry.user.userType === "Guest") return false;
             if (opz.nascondiSenzaMail && (entry.user.mail ?? "").trim() === "") return false;
             if (opz.nascondiSenzaTelefono && !haTelefono(entry)) return false;
+            if (opz.nascondiSenzaInterno && (entry.interno ?? "").trim() === "") return false;
         }
 
         return true;

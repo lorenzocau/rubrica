@@ -1,7 +1,7 @@
 import {
     nomeDipendente, costruisciTabelle, campoCsv, generaCsv, generaHtmlStampa,
     formattaDataStampa, nomeFileCsv, escapeHtml, IOpzioniTabelle, ITabella
-} from "../tabelle";
+} from "../elenco";
 import { merge } from "../rubricaLogic";
 import { PROPRIETA_DEFAULT, risolviProprieta } from "../proprieta";
 import { IRubricaEntry, UtenteGraph } from "../types";
@@ -41,7 +41,9 @@ const rubrica: IRubricaEntry[] = merge(
     ]
 );
 
-const tutte: IOpzioniTabelle = { dipendenti: true, servizi: true, esterni: true, mostraCellulare: true, mostraReparto: true };
+const tutte: IOpzioniTabelle = {
+    dipendenti: true, servizi: true, esterni: true, nascondiSenzaInterno: false, mostraCellulare: true, mostraReparto: true,
+};
 
 function tabella(tabelle: ITabella[], id: string): ITabella {
     const t = tabelle.filter(x => x.id === id)[0];
@@ -95,6 +97,21 @@ describe("costruisciTabelle: dipendenti", () => {
             nome: "Rossi Mario", interno: "101", cellulare: "+39 333 1234567", cellulareBreve: "512", jobTitle: "Responsabile",
         });
         expect(dip.righe.filter(x => x.nome === "De Luca Anna")[0].interno).toBe("007"); // zeri iniziali
+    });
+
+    test("nascondiSenzaInterno toglie i dipendenti senza numero interno breve, non servizi ed esterni", () => {
+        const t = costruisciTabelle(rubrica, "", { ...tutte, nascondiSenzaInterno: true });
+        // "Bianchi Zeno" non ha telefono: senza interno breve
+        expect(tabella(t, "dipendenti").righe.map(r => r.nome)).toEqual(["De Luca Anna", "Rossi Mario"]);
+        expect(tabella(t, "servizi").righe).toHaveLength(2);
+        expect(tabella(t, "esterni").righe).toHaveLength(2);
+    });
+
+    test("un dipendente con il solo cellulare, senza interno, è tolto da nascondiSenzaInterno", () => {
+        const soloCell: UtenteGraph = { id: "9", displayName: "Carla Neri", givenName: "Carla", surname: "Neri", mail: "c@coind.it", mobilePhone: "+39 333 1234567" };
+        const r = merge([soloCell, rossi], []);
+        expect(tabella(costruisciTabelle(r, "", tutte), "dipendenti").righe).toHaveLength(2);
+        expect(tabella(costruisciTabelle(r, "", { ...tutte, nascondiSenzaInterno: true }), "dipendenti").righe.map(x => x.nome)).toEqual(["Rossi Mario"]);
     });
 
     test("mostraCellulare=false toglie colonne e dati dei cellulari", () => {
@@ -277,10 +294,16 @@ describe("generaHtmlStampa", () => {
     });
 });
 
-describe("impostazione abilitaTabelle", () => {
+describe("impostazione abilitaElenco", () => {
+    test("nascondiSenzaInterno è spenta di default e un valore salvato true resta true", () => {
+        expect(PROPRIETA_DEFAULT.nascondiSenzaInterno).toBe(false);
+        expect(risolviProprieta({}).nascondiSenzaInterno).toBe(false);
+        expect(risolviProprieta({ nascondiSenzaInterno: true }).nascondiSenzaInterno).toBe(true);
+    });
+
     test("è attiva di default e un valore salvato false resta false", () => {
-        expect(PROPRIETA_DEFAULT.abilitaTabelle).toBe(true);
-        expect(risolviProprieta({}).abilitaTabelle).toBe(true);
-        expect(risolviProprieta({ abilitaTabelle: false }).abilitaTabelle).toBe(false);
+        expect(PROPRIETA_DEFAULT.abilitaElenco).toBe(true);
+        expect(risolviProprieta({}).abilitaElenco).toBe(true);
+        expect(risolviProprieta({ abilitaElenco: false }).abilitaElenco).toBe(false);
     });
 });

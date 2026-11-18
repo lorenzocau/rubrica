@@ -33,7 +33,7 @@ const destraStyle = mergeStyles({
 // Cifre di larghezza uguale (tabular-nums) per confrontare i numeri tra righe diverse.
 const numeriStyle = mergeStyles({
     display: "grid",
-    gridTemplateColumns: "72px 72px 128px",
+    gridTemplateColumns: "72px 72px 136px",
     columnGap: "4px",
     alignItems: "center",
     fontVariantNumeric: "tabular-nums"
@@ -56,9 +56,9 @@ const iconaStyle = mergeStyles({
     flexShrink: 0
 });
 
-// slot del cellulare intero: secondario, in grigio
+// slot del cellulare intero: stessa dimensione degli altri due numeri, ma in grigio e senza grassetto
 const slotCellulareStyle = mergeStyles({
-    fontSize: 12,
+    fontSize: 14,
     color: "#605e5c",
     whiteSpace: "nowrap"
 });
@@ -72,8 +72,8 @@ const chatSlotStyle = mergeStyles({
     flexShrink: 0
 });
 
-// Link dei numeri in grigio neutro (il rosso del tema su 12px è poco leggibile in una lista
-// fitta); la sottolineatura compare al passaggio del mouse.
+// Link dei numeri in grigio neutro (il rosso del tema è poco leggibile in una lista fitta);
+// la sottolineatura compare al passaggio del mouse.
 const linkNumeroStyles = {
     root: {
         color: "#605e5c",

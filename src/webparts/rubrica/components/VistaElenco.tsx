@@ -6,15 +6,16 @@ import { MessageBar, MessageBarType } from "@fluentui/react/lib/MessageBar";
 import { Text } from "@fluentui/react/lib/Text";
 import { mergeStyles } from "@fluentui/react/lib/Styling";
 import { IRubricaEntry } from "../types";
-import { costruisciTabelle, formattaDataStampa, generaCsv, generaHtmlStampa, ITabella, nomeFileCsv } from "../tabelle";
+import { costruisciTabelle, formattaDataStampa, generaCsv, generaHtmlStampa, ITabella, nomeFileCsv } from "../elenco";
 
-interface IVistaTabelleProps {
-    rubrica: IRubricaEntry[];     // elenco completo, senza filtri (i filtri di questa vista sono in tabelle.ts)
+interface IVistaElencoProps {
+    rubrica: IRubricaEntry[];     // elenco completo, senza filtri (i filtri di questa vista sono in elenco.ts)
     ricerca: string;              // "" = tutto
     titolo: string;               // titolo del web part, usato nella stampa
     esterniDisponibili: boolean;  // la lista Esterni è attiva e letta
     mostraCellulare: boolean;
     mostraReparto: boolean;
+    nascondiSenzaInterno: boolean; // opzione del pannello: toglie i dipendenti senza interno breve
 }
 
 // --- stili ---
@@ -114,7 +115,7 @@ function scaricaCsv(nomeFile: string, contenuto: string): void {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function VistaTabelle({ rubrica, ricerca, titolo, esterniDisponibili, mostraCellulare, mostraReparto }: IVistaTabelleProps) {
+function VistaElenco({ rubrica, ricerca, titolo, esterniDisponibili, mostraCellulare, mostraReparto, nascondiSenzaInterno }: IVistaElencoProps) {
     const [conDipendenti, setConDipendenti] = useState<boolean>(true);
     const [conServizi, setConServizi] = useState<boolean>(true);
     const [conEsterni, setConEsterni] = useState<boolean>(true);
@@ -127,10 +128,11 @@ function VistaTabelle({ rubrica, ricerca, titolo, esterniDisponibili, mostraCell
             dipendenti: conDipendenti,
             servizi: conServizi,
             esterni: esterniDisponibili && conEsterni,
+            nascondiSenzaInterno,
             mostraCellulare,
             mostraReparto,
         }),
-        [rubrica, ricerca, conDipendenti, conServizi, conEsterni, esterniDisponibili, mostraCellulare, mostraReparto]
+        [rubrica, ricerca, conDipendenti, conServizi, conEsterni, esterniDisponibili, nascondiSenzaInterno, mostraCellulare, mostraReparto]
     );
 
     const totale = tabelle.reduce((somma, t) => somma + t.righe.length, 0);
@@ -194,4 +196,4 @@ function VistaTabelle({ rubrica, ricerca, titolo, esterniDisponibili, mostraCell
     );
 }
 
-export default VistaTabelle;
+export default VistaElenco;
